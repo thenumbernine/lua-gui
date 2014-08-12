@@ -3,3 +3,5 @@ luajit opengl sdl widget library
 you'd be better off just using glfw or librocket or something
 i don't know why I made this, or why I'm using it
 regardless, here it is
+
+depends on my lua-ext, lua-gl, lua vector class, and Malkia's UFO
