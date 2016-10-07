@@ -244,7 +244,7 @@ function GUI:update()
 		end
 	
 		gl.glPushAttrib(gl.GL_ALL_ATTRIB_BITS)
-		
+
 		gl.glUseProgram(0)
 		gl.glDisable(gl.GL_CULL_FACE)
 		gl.glDisable(gl.GL_DEPTH_TEST)
