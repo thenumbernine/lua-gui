@@ -1,8 +1,9 @@
 local ffi = require 'ffi'
 local bit = require 'bit'
-local gl = require 'ffi.OpenGL'
+local gl = require 'gl'
 local class = require 'ext.class'
 local glreport = require 'gl.report'
+
 local Font = class()
 
 function Font:init(args)

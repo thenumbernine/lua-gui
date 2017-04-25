@@ -1,4 +1,4 @@
-local gl = require 'ffi.OpenGL'
+local gl = require 'gl'
 local sdl = require 'ffi.sdl'
 local Widget = require 'gui.widget'
 local class = require 'ext.class'
