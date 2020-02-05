@@ -17,7 +17,6 @@ build = {
 	modules = {
 		["gui.font"] = "font.lua",
 		["gui"] = "gui.lua",
-		["gui.mouse"] = "mouse.lua",
 		["gui.timer"] = "timer.lua",
 		["gui.widget"] = "widget.lua",
 		["gui.widget.scrollarea"] = "widget/scrollarea.lua",

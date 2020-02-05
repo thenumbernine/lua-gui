@@ -16,9 +16,9 @@ function ScrollTabWidget:mouseEvent(event, x, y)
 	if mouse.leftDown then
 		local mouseMove
 		if self.owner.horz then 
-			mouseMove = mouse.deltaPos[1] * sx
+			mouseMove = mouse.deltaPos.x * sx
 		else
-			mouseMove = mouse.deltaPos[2] * sy
+			mouseMove = mouse.deltaPos.y * sy
 		end
 		self.owner:setSliderPos(
 			self.owner.sliderPos + mouseMove * (self.max - self.min) / (self.owner.len - 2 * self.owner.buttonSize - self.owner.tabSize)

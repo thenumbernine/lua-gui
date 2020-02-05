@@ -2,15 +2,15 @@ local ffi = require 'ffi'
 local gl = require 'gl'
 local glu = require 'ffi.glu'
 local sdl = require 'ffi.sdl'
+local table = require 'ext.table'
 local class = require 'ext.class'
 local vec2 = require 'vec.vec2'
 local box2 = require 'vec.box2'
+local Mouse = require 'glapp.mouse'
 local Font = require 'gui.font'
 local Widget = require 'gui.widget'
-local Mouse = require 'gui.mouse'
 local Timer = require 'gui.timer'
 local Tex2D = require 'gl.tex2d'
-require 'ext'
 
 
 -- for scope of Widget functions ... 
@@ -306,8 +306,8 @@ function GUI:update()
 		end
 
 		local mousepos = vec2(
-			mouse.pos[1] * viewWidth,
-			(1 - mouse.pos[2]) * viewHeight)
+			mouse.pos.x * viewWidth,
+			(1 - mouse.pos.y) * viewHeight)
 			
 		if self.captureMenu then
 			self.ignoreCapture = false
