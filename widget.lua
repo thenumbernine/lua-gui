@@ -3,6 +3,7 @@ local box2 = require 'vec.box2'
 local vec2 = require 'vec.vec2'
 local vec4 = require 'vec.vec4'
 local class = require 'ext.class'
+local table = require 'ext.table'
 
 --[[
 fields:
