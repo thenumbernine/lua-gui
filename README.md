@@ -1,6 +1,9 @@
-LuaJIT OpenGL SDL-based widget library.
+[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=KYWUWS86GSFGL)
+
+### LuaJIT OpenGL SDL-based widget library.
 
 You'd be better off just using imgui or glfw or librocket or something else.
+
 I use cimgui for all my own GUI needs.
 
 ### Dependencies:
