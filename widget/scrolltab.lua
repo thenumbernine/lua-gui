@@ -10,12 +10,12 @@ function ScrollTabWidget:mouseEvent(event, x, y)
 		self.gui:setCapture(self)
 		return 'stop'
 	end
-	
+
 	local sx, sy = self.gui:sysSize()
-	
+
 	if mouse.leftDown then
 		local mouseMove
-		if self.owner.horz then 
+		if self.owner.horz then
 			mouseMove = mouse.deltaPos.x * sx
 		else
 			mouseMove = mouse.deltaPos.y * sy

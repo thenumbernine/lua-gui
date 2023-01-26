@@ -1,8 +1,10 @@
 local gl = require 'gl'
 local sdl = require 'ffi.sdl'
-local Widget = require 'gui.widget'
+local math = require 'ext.math'
 local class = require 'ext.class'
+local vec2 = require 'vec.vec2'
 local vec4 = require 'vec.vec4'
+local Widget = require 'gui.widget'
 
 --[[
 textListeners = array of objects which, upon text change, calls the objects' "onTextChange" function with the menu as the sole arg
@@ -38,7 +40,7 @@ end
 function TextFieldWidget:onBlur()
 	if self.textHasChanged then
 		if self.onTextChange then self:onTextChange() end
-		
+
 		for _,listener in ipairs(self.textListeners) do
 			listener.onTextChange(self)
 		end
@@ -51,7 +53,7 @@ end
 
 function TextFieldWidget:displayText(ofs)	-- just like Widget except pos is offset
 	TextFieldWidget.super.displayText(self, ofs)
-	
+
 	if self.gui.currentFocus == self and math.floor(sdl.SDL_GetTicks() / 500) % 2 == 0 then
 		local cursorPosX, cursorPosY = self.gui.font:draw{
 			pos = vec2(self.textPadding,0),
@@ -61,7 +63,7 @@ function TextFieldWidget:displayText(ofs)	-- just like Widget except pos is offs
 			dontRender = true,
 			multiLine = self.multiLine,
 		}
-		
+
 		gl.glColor3f(0,0,0)
 		gl.glBegin(gl.GL_LINES)
 		gl.glVertex2f(cursorPosX + self.textPadding, cursorPosY)
@@ -133,7 +135,7 @@ function TextFieldWidget:keyEditString(sdlevent)
 					unicode = upperUnicodeChar:byte()
 				end
 			end
-		
+
 			-- TODO shift
 			self.text = textBeforeCursor .. string.char(unicode) .. textAfterCursor
 			self.cursorPos = self.cursorPos + 1

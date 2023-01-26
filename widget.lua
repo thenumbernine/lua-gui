@@ -61,7 +61,7 @@ function Widget:init(args)
 
 	self.gui = assert(args.gui)
 	args.gui = nil	-- don't copy/paste this with the rest of the args
-	
+
 	self.posValue = vec2()
 	self.scaleValue = vec2(1,1)
 	self.backgroundScaleValue = vec2(1/4, 1/4)
@@ -77,12 +77,12 @@ function Widget:init(args)
 
 --[[ TODO implement this somewhere
 		self.client.updateCallbacks:insertUnique(ClientSide.updateWidgets)
-		
+
 		-- current input context menus
 		if not self.client.menuKeyPrompt then
 			self.client.menuKeyPrompt = table()
 		end
-		
+
 		-- root-level menus
 		if not self.client.menus then
 			self.client.menus = table()
@@ -101,7 +101,7 @@ function Widget:init(args)
 			self[k] = args[k]
 		end
 	end
-	
+
 	-- fill whatever args are passed
 	-- use setters when available
 	-- use tables as parameter lists
@@ -110,15 +110,13 @@ function Widget:init(args)
 		assert(getmetatable(args.parent) ~= Widget)
 		self:setParent(args.parent[1])
 	end
-	
+
 	for k,v in pairs(args) do
-		if k == 'parent' then	-- already handled
-		elseif k == 'class' then	-- already handled
-		else
+		if k ~= 'parent' and k ~= 'class' then	-- already handled
 			handleargkv(k,v)
 		end
 	end
-		
+
 --[[
 	if self.hasPrompts then
 		self.client.menuKeyPrompt:insert(self)
@@ -154,7 +152,7 @@ function Widget:setParent(newv)
 	end
 	self.parent = newv
 	if self.parent then
-		self.parent.children:insertUnique(self)			
+		self.parent.children:insertUnique(self)
 	end
 end
 
@@ -226,14 +224,14 @@ local function drawRect(args)
 	end
 	local tcmin = args.tcmin or {0,0}
 	local tcmax = args.tcmax or {1,1}
-	
+
 	gl.glBegin(gl.GL_QUADS)
 	gl.glTexCoord2f(tcmin[1],tcmin[2]) gl.glVertex2f(args.pos[1], args.pos[2])
 	gl.glTexCoord2f(tcmin[1],tcmax[2]) gl.glVertex2f(args.pos[1], args.pos[2] + args.size[2])
 	gl.glTexCoord2f(tcmax[1],tcmax[2]) gl.glVertex2f(args.pos[1] + args.size[1], args.pos[2] + args.size[2])
 	gl.glTexCoord2f(tcmax[1],tcmin[2]) gl.glVertex2f(args.pos[1] + args.size[1], args.pos[2])
 	gl.glEnd()
-	
+
 	if textureID ~= 0 then
 		gl.glDisable(gl.GL_TEXTURE_2D)
 	end
@@ -241,7 +239,7 @@ end
 
 function Widget:display(ofs)
 	if not self.visible then return false end
-	
+
 	-- I could do this all in one sweep ...
 	if self.backgroundTexture and self.backgroundColorValue[4] > 0 then
 		drawRect{
@@ -300,9 +298,9 @@ function Widget:display(ofs)
 			end
 		end
 	end
-	
+
 	self:displayText(ofs)
-	
+
 	return true
 end
 

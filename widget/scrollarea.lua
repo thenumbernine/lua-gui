@@ -20,12 +20,12 @@ function ScrollAreaWidget:init(args)
 		}
 	end
 	self.scrollPanel.scrollArea = self
-	
+
 	local fitsizeX, fitsizeY = math.max(0, self.sizeValue[1] - 2), math.max(0, self.sizeValue[2] - 2)
 	self.scrollPanel:pos(0,0)
-	
+
 	local scrollsizeX, scrollsizeY = math.max(0, self.scrollPanel.sizeValue[1] - fitsizeX), math.max(0, self.scrollPanel.sizeValue[2] - fitsizeY)
-	
+
 	self.horz = self.gui:widget{class=ScrollAreaBarWidget, parent={self}, pos={0, self.sizeValue[2]-1}, len=self.sizeValue[1]-1, horz=true, min=0, max=scrollsizeX, sliderPos=0, owner=self}
 	self.vert = self.gui:widget{class=ScrollAreaBarWidget, parent={self}, pos={self.sizeValue[1]-1, 0}, len=self.sizeValue[2]-1, horz=false, min=0, max=scrollsizeY, sliderPos=0, owner=self}
 end
@@ -39,7 +39,7 @@ function ScrollAreaWidget:size(...)
 end
 
 function ScrollAreaWidget:updateChildSize()
-	local fitsize = vec2(self:size()) - vec2(1,1)					
+	local fitsize = vec2(self:size()) - vec2(1,1)
 	local scrollsize = vec2(self.scrollPanel:size()) - fitsize
 	scrollsize[1] = math.max(scrollsize[1], 0)
 	scrollsize[2] = math.max(scrollsize[2], 0)

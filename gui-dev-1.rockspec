@@ -7,10 +7,10 @@ description = {
 	summary = "LuaJIT OpenGL SDL-based widget library.",
 	detailed = "LuaJIT OpenGL SDL-based widget library.",
 	homepage = "https://github.com/thenumbernine/lua-gui",
-	license = "MIT"
+	license = "MIT",
 }
 dependencies = {
-	"lua >= 5.1"
+	"lua >= 5.1",
 }
 build = {
 	type = "builtin",

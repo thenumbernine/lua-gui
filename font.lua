@@ -9,7 +9,7 @@ local Font = class()
 function Font:init(args)
 	self.widths = {}
 	self:resetWidths()
-	
+
 	if args and args.tex then
 		self:calcWidths(args.tex)
 	end
@@ -34,7 +34,7 @@ function Font:calcWidths(tex)
 		self:resetWidths()
 		return
 	end
-	
+
 	local int = ffi.new('int[1]')
 	gl.glBindTexture(gl.GL_TEXTURE_2D, self.tex.id)
 
@@ -69,7 +69,7 @@ function Font:calcWidths(tex)
 	gl.glGetTexImage(gl.GL_TEXTURE_2D, 0, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, buffer)
 
 	gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
-		
+
 	local letterWidth = width / 16
 	local letterHeight = height / 16
 
@@ -93,9 +93,9 @@ function Font:calcWidths(tex)
 				lastx = lastx + 2
 				if firstx < 0 then firstx = 0 end
 				if lastx > letterWidth then lastx = letterWidth end
-				
+
 				if lastx < firstx then firstx, lastx = 0, letterWidth/2 end
-				
+
 				self.widths[ch-32+1].start = firstx / letterWidth
 				self.widths[ch-32+1].finish = lastx / letterWidth
 			end
@@ -155,7 +155,7 @@ function Font:drawUnpacked(
 	endCall
 )
 	assert(self.tex)
-	
+
 	--local text = text:gsub('\r\n', '\n'):gsub('\r', '\n')
 
 	if not dontRender then
@@ -173,17 +173,17 @@ function Font:drawUnpacked(
 			gl.glBegin(gl.GL_QUADS)
 		end
 	end
-	
+
 	local cursorX, cursorY = 0, 0
 	local maxx = 0
-	
-	local lastCharWasSpace = true
+
+	--local lastCharWasSpace = true
 	local a = 1
 	while a <= #text do
 		local thisCharIsSpace = (text:byte(a) or 0) <= 32
 		local nextCharIsSpace = (text:byte(a + 1) or 0) <= 32
 		local newline = false
-		
+
 		if text:sub(a,a) == '\n' then
 			newline = true
 		else
@@ -210,7 +210,7 @@ function Font:drawUnpacked(
 				a = a - 1
 			end
 		end
-		
+
 		if newline and not singleLine then
 			cursorX = 0
 			cursorY = cursorY + fontSizeY
@@ -218,6 +218,7 @@ function Font:drawUnpacked(
 		else
 			local charIndex = math.max(text:byte(a) or 0, 32)
 			local widthIndex = charIndex - 32 + 1
+			local startWidth, finishWidth
 			if self.widths[widthIndex] then
 				startWidth = self.widths[widthIndex].start
 				finishWidth = self.widths[widthIndex].finish
@@ -226,16 +227,16 @@ function Font:drawUnpacked(
 				finishWidth = 1
 			end
 			local width = finishWidth - startWidth
-			
+
 			local lettermaxx = width * fontSizeX + cursorX
 			if maxx < lettermaxx then maxx = lettermaxx end
-			
+
 			if not dontRender then
 				local tx = bit.band(charIndex, 15)
 				local ty = bit.rshift(charIndex, 4) - 2
 				if quadCall then
 					quadCall(cursorX+posX,cursorY+posY,tx,ty,startWidth,finishWidth)
-				else			
+				else
 					for i=1,4 do
 						local vtxX, vtxY
 						if bit.band(i-1, 2) == 0 then
@@ -257,10 +258,10 @@ function Font:drawUnpacked(
 			end
 			cursorX = cursorX + width * fontSizeX
 		end
-		
+
 		a = a + 1
 	end
-	
+
 	if not dontRender then
 		if endCall then
 			endCall()
@@ -269,7 +270,7 @@ function Font:drawUnpacked(
 			gl.glDisable(gl.GL_TEXTURE_2D)
 		end
 	end
-	
+
 	return maxx, cursorY + fontSizeY
 end
 

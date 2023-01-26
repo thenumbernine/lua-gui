@@ -1,4 +1,3 @@
-local Widget = require 'gui.widget'
 local class = require 'ext.class'
 local ScrollbarWidget = require 'gui.widget.scrollbar'
 

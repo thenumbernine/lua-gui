@@ -1,6 +1,5 @@
 local ffi = require 'ffi'
 local gl = require 'gl'
-local glu = require 'ffi.glu'
 local sdl = require 'ffi.sdl'
 local table = require 'ext.table'
 local class = require 'ext.class'
@@ -13,7 +12,7 @@ local Timer = require 'gui.timer'
 local Tex2D = require 'gl.tex2d'
 
 
--- for scope of Widget functions ... 
+-- for scope of Widget functions ...
 local GUI = class()
 
 function GUI:gotInput()
@@ -27,9 +26,9 @@ end
 function GUI:widget(args)
 	if not args then args = {} end
 	args.gui = self
-	local class = args.class or Widget
+	local cl = args.class or Widget
 	args.class = nil
-	return class(args)
+	return cl(args)
 end
 
 function GUI:getInput(menu, event, eventPos)
@@ -40,11 +39,11 @@ function GUI:getInput(menu, event, eventPos)
 	eventPos = eventPos - menu.posValue
 	eventPos[1] = eventPos[1] / menu.scaleValue[1]
 	eventPos[2] = eventPos[2] / menu.scaleValue[2]
-	
+
 	menu.selectedChild = nil
-	
+
 	if menu.parent then menu.parent.selectedChild = menu end
-	
+
 	local res
 	if not menu.visible then
 		res = 'stop'
@@ -54,54 +53,54 @@ function GUI:getInput(menu, event, eventPos)
 		end
 	end
 
-	if res == 'continue' then
-	elseif res == 'stop' then
+	if res == 'stop' then
 		self.gotInputFlag = true
 		return 'continue'
 	elseif res == 'halt' then
 		self.gotInputFlag = true
 		return 'halt'
 	end
+	-- res == 'continue'
 
 	if mouse.leftPress then
 		self.nextFocusCandidate = menu
 	end
-	
+
 	local childSpacePos = eventPos - menu.childOfsValue
 
 	for i=#menu.children,1,-1 do
 		local c = menu.children[i]
 		if c then	-- if a widget is removed before being processed then input can be processed twice ...
-			if not (self.ignoreCapture and c == self.captureMenu) then 
+			if not (self.ignoreCapture and c == self.captureMenu) then
 				local childPos = vec2(unpack(childSpacePos))
-				if childPos[1] > c.posValue[1] 
+				if childPos[1] > c.posValue[1]
 				and childPos[2] > c.posValue[2]
 				and childPos[1] < c.posValue[1] + c.sizeValue[1]
 				and childPos[2] < c.posValue[2] + c.sizeValue[2]
 				then
 					res = self:getInput(c, event, childPos)
-					if res == 'continue' then
-					elseif res == 'stop' then
+					if res == 'stop' then
 						return 'stop'
 					elseif res == 'halt' then
 						return 'halt'
 					end
-					
+					-- res == 'continue'
+
 					if c.occludesInput and c.visible then break end
 				end
 			end
 		end
 	end
-	
+
 	if menu.mouseEvent then
-		local res = menu:mouseEvent(event, unpack(eventPos)) or 'continue'
+		res = menu:mouseEvent(event, unpack(eventPos)) or 'continue'
 		if res ~= 'continue' then
 			self.gotInputFlag = true
 		end
 		return res
 	else
 		return 'continue'
-	end	
+	end
 end
 
 local double4 = ffi.new('GLdouble[4]')
@@ -120,12 +119,12 @@ local function display(menu, rect)
 	rect = rect - menu.posValue
 	local menubox = box2(0, 0, unpack(menu.sizeValue))
 	if not rect:touches(menubox) then return end
-	
+
 	rect:clamp(menubox)
-	
+
 	gl.glPushMatrix()
 	gl.glTranslatef(menu.posValue[1], menu.posValue[2], 0)
-	
+
 	gl.glClipPlane(gl.GL_CLIP_PLANE0, loadDouble4(0, 1, 0, -rect.min[2]))
 	gl.glClipPlane(gl.GL_CLIP_PLANE1, loadDouble4(0, -1, 0, rect.max[2]))
 	gl.glClipPlane(gl.GL_CLIP_PLANE2, loadDouble4(1, 0, 0, -rect.min[1]))
@@ -134,16 +133,16 @@ local function display(menu, rect)
 	gl.glEnable(gl.GL_CLIP_PLANE1)
 	gl.glEnable(gl.GL_CLIP_PLANE2)
 	gl.glEnable(gl.GL_CLIP_PLANE3)
-	
+
 	gl.glScalef(menu.scaleValue[1], menu.scaleValue[2], 1)
-	
+
 	local drawChildren = menu:display()
-	
+
 	gl.glDisable(gl.GL_CLIP_PLANE0)
 	gl.glDisable(gl.GL_CLIP_PLANE1)
 	gl.glDisable(gl.GL_CLIP_PLANE2)
 	gl.glDisable(gl.GL_CLIP_PLANE3)
-	
+
 	if drawChildren then
 		gl.glTranslatef(-menu.childOfsValue[1], -menu.childOfsValue[2], 0)
 		local childRect = rect + menu.childOfsValue
@@ -152,7 +151,7 @@ local function display(menu, rect)
 		end
 		gl.glTranslatef(menu.childOfsValue[1], menu.childOfsValue[2], 0)
 	end
-	
+
 	gl.glClipPlane(gl.GL_CLIP_PLANE0, loadDouble4(0, 1, 0, -rect.min[2]))
 	gl.glClipPlane(gl.GL_CLIP_PLANE1, loadDouble4(0, -1, 0, rect.max[2]))
 	gl.glClipPlane(gl.GL_CLIP_PLANE2, loadDouble4(1, 0, 0, -rect.min[1]))
@@ -161,23 +160,23 @@ local function display(menu, rect)
 	gl.glEnable(gl.GL_CLIP_PLANE1)
 	gl.glEnable(gl.GL_CLIP_PLANE2)
 	gl.glEnable(gl.GL_CLIP_PLANE3)
-	
+
 	if menu.postDisplay then
 		menu:postDisplay()
 		-- border anyone?
 	end
-	
+
 	gl.glDisable(gl.GL_CLIP_PLANE0)
 	gl.glDisable(gl.GL_CLIP_PLANE1)
 	gl.glDisable(gl.GL_CLIP_PLANE2)
 	gl.glDisable(gl.GL_CLIP_PLANE3)
-	
+
 	gl.glPopMatrix()
 end
 
 function GUI:setFocus(menu)
 	if self.currentFocus then
-		if self.currentFocus.onBlur then	
+		if self.currentFocus.onBlur then
 			self.currentFocus:onBlur()
 		end
 	end
@@ -213,7 +212,7 @@ local viewportInt = ffi.new('GLint[4]')
 
 function GUI:event(event)
 	if event.type == sdl.SDL_KEYUP
-	or event.type == sdl.SDL_KEYDOWN 
+	or event.type == sdl.SDL_KEYDOWN
 	then
 		if event.key.keysym.sym == sdl.SDLK_LGUI
 		or event.key.keysym.sym == sdl.SDLK_RGUI
@@ -229,12 +228,12 @@ function GUI:update()
 
 	if self.ownMouse then mouse:update() end
 	if self.ownTimer then self.timer:update() end
-	
-	local captured = {}	--pointers in scripting languages...
-	
+
+	--local captured = {}	--pointers in scripting languages...
+
 	gl.glGetIntegerv(gl.GL_VIEWPORT, viewportInt)
 	local viewWidth, viewHeight = viewportInt[2], viewportInt[3]
-	
+
 	do
 		if self.root then
 			self.root.sizeValue:set(
@@ -242,7 +241,7 @@ function GUI:update()
 				viewHeight / self.root.scaleValue[2]
 			)
 		end
-	
+
 		gl.glPushAttrib(gl.GL_ALL_ATTRIB_BITS)
 
 		gl.glUseProgram(0)
@@ -251,22 +250,22 @@ function GUI:update()
 		gl.glDisable(gl.GL_ALPHA_TEST)
 		gl.glDisable(gl.GL_LIGHTING)
 		gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
-		
+
 		for i=7,0,-1 do
 			gl.glActiveTexture(gl.GL_TEXTURE0 + i)
 			gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
 			gl.glDisable(gl.GL_TEXTURE_2D)
 		end
-		
+
 		gl.glMatrixMode(gl.GL_PROJECTION)
 		gl.glPushMatrix()
 		gl.glLoadIdentity()
 		gl.glOrtho(0, viewWidth, viewHeight, 0, -1000, 1000)
-		
+
 		gl.glMatrixMode(gl.GL_MODELVIEW)
 		gl.glPushMatrix()
 		gl.glLoadIdentity()
-		
+
 		if self.root then
 			gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
 			gl.glEnable(gl.GL_BLEND)
@@ -274,20 +273,20 @@ function GUI:update()
 			display(self.root, box2(0, 0, viewWidth, viewHeight))
 			gl.glDisable(gl.GL_BLEND)
 		end
-		
+
 		gl.glPopMatrix()
 		gl.glMatrixMode(gl.GL_PROJECTION)
 		gl.glPopMatrix()
 		gl.glMatrixMode(gl.GL_MODELVIEW)
 		gl.glPopAttrib()
-		
+
 	end
-	
+
 	self.gotInputFlag = false
 	if self.root then
-	
+
 		local event = 0
-		
+
 		if self.keyDownMap and (self.keyDownMap[sdl.SDLK_LGUI] or self.keyDownMap[sdl.SDLK_RGUI]) then
 			if mouse.leftPress then event = bit.bor(event, 2)
 			elseif mouse.leftRelease then event = bit.bor(event, 128)
@@ -299,7 +298,7 @@ function GUI:update()
 			elseif mouse.leftDown then event = bit.bor(event, 8)
 			end
 		end
-		
+
 		if mouse.rightPress then event = bit.bor(event, 2)
 		elseif mouse.rightRelease then event = bit.bor(event, 128)
 		elseif mouse.rightDown then event = bit.bor(event, 16)
@@ -308,15 +307,17 @@ function GUI:update()
 		local mousepos = vec2(
 			mouse.pos.x * viewWidth,
 			(1 - mouse.pos.y) * viewHeight)
-			
+
+		local response
 		if self.captureMenu then
 			self.ignoreCapture = false
-			local pos = vec2(unpack(mousepos))
 			local rootToCapture = table()
-			local o = self.captureMenu.parent
-			while o do
-				rootToCapture:insert(1, o)
-				o = o.parent
+			do
+				local o = self.captureMenu.parent
+				while o do
+					rootToCapture:insert(1, o)
+					o = o.parent
+				end
 			end
 			for _,o in ipairs(rootToCapture) do
 				mousepos = mousepos - o.posValue
@@ -327,27 +328,27 @@ function GUI:update()
 			mousepos = mousepos - self.captureMenu.posValue
 			mousepos[1] = mousepos[1] / self.captureMenu.scaleValue[1]
 			mousepos[2] = mousepos[2] / self.captureMenu.scaleValue[2]
-			local response = self:getInput(self.captureMenu, event, mousepos)
+			response = self:getInput(self.captureMenu, event, mousepos)
 			self.gotInputFlag = response ~= 'continue'
 		end
-		
-		if not result then
+
+		if not response then
 			response = self:getInput(self.root, event, mousepos)
 			self.gotInputFlag = response ~= 'continue'
 		end
-		
+
 		if mouse.leftPress then
 			if self.nextFocusCandidate and self.nextFocusCandidate ~= self.currentFocus then
 				self:setFocus(self.nextFocusCandidate)
 			end
 		end
-		
+
 		updateTopmostPriority(self.root)
-		
+
 		-- * doKeyPress() used to be here *
-		
+
 		self.captureMenu = self.nextCapture
-		
+
 	end
 end
 
@@ -372,19 +373,19 @@ args:
 --]]
 function GUI:init(args)
 	self.font = Font()
-	
+
 	self.mouse = args and args.mouse
 	if not self.mouse then
 		self.mouse = Mouse()
 		self.ownMouse = true
 	end
-	
+
 	self.timer = args and args.timer
 	if not self.timer then
 		self.timer = Timer()
 		self.ownTimer = true
 	end
-	
+
 	local fontfilename = 'font.png'
 	if args and args.font then fontfilename = args.font end
 	self.font.tex = Tex2D{

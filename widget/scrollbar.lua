@@ -1,8 +1,8 @@
-local sdl = require 'ffi.sdl'
-local Widget = require 'gui.widget'
+local math = require 'ext.math'
 local class = require 'ext.class'
-local ScrollTabWidget = require 'gui.widget.scrolltab'
 local vec4 = require 'vec.vec4'
+local Widget = require 'gui.widget'
+local ScrollTabWidget = require 'gui.widget.scrolltab'
 
 local ScrollbarWidget = class(Widget)
 
@@ -14,7 +14,7 @@ ScrollbarWidget.speed = 15
 
 function ScrollbarWidget:init(args)
 	ScrollbarWidget.super.init(self, args)
-	
+
 	if args.horz then
 		self.scrollLeft = self.gui:widget{text='<', parent={self}, size={1,1}}
 		self.scrollRight = self.gui:widget{text='>', parent={self}, size={1,1}}
@@ -25,7 +25,7 @@ function ScrollbarWidget:init(args)
 		self.scrollTab = self.gui:widget{class=ScrollTabWidget, pos={1, self.tabSize}, parent={self}}
 	end
 	self.scrollTab.owner = self
-	
+
 	self.horz = args.horz
 	self.sliderPos = args.sliderPos
 	self.min = args.min
@@ -68,13 +68,13 @@ end
 function ScrollbarWidget:mouseEvent(event, x, y)
 	if self.gui.mouse.leftDown then
 		local speed = self.speed * self.gui.timer.delta
-	
+
 		if self.selectedChild == self.scrollUp
 		or self.selectedChild == self.scrollLeft
 		then
 			self:setSliderPos(self.sliderPos - speed)
 		end
-		
+
 		if self.selectedChild == self.scrollDown
 		or self.selectedChild == self.scrollRight
 		then
