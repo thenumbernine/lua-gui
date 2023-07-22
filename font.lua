@@ -10,8 +10,8 @@ function Font:init(args)
 	self.widths = {}
 	self:resetWidths()
 
-	if args and args.tex then
-		self:calcWidths(args.tex)
+	if args and args.image then
+		self:calcWidths(args.image)
 	end
 end
 
@@ -24,51 +24,14 @@ function Font:resetWidths()
 	end
 end
 
--- looks for font texture in self.tex
--- tex is optional and is stored in self.tex
-function Font:calcWidths(tex)
-	if tex ~= nil then
-		self.tex = tex
-	end
-	if self.tex.id == 0 then
-		self:resetWidths()
-		return
-	end
-
-	local int = ffi.new('int[1]')
-	gl.glBindTexture(gl.GL_TEXTURE_2D, self.tex.id)
-
-	gl.glGetTexLevelParameteriv(gl.GL_TEXTURE_2D, 0, gl.GL_TEXTURE_WIDTH, int)
-	local width = int[0]
-
-	gl.glGetTexLevelParameteriv(gl.GL_TEXTURE_2D, 0, gl.GL_TEXTURE_HEIGHT, int)
-	local height = int[0]
-
-	gl.glGetTexLevelParameteriv(gl.GL_TEXTURE_2D, 0, gl.GL_TEXTURE_INTERNAL_FORMAT, int)
-	local components = ({
-		[gl.GL_RGB] = 3,
-		[gl.GL_RGBA] = 4,
-		[gl.GL_RGB8] = 3,
-		[gl.GL_RGBA8] = 4,
-		[gl.GL_COMPRESSED_RGB] = 3,
-		[gl.GL_COMPRESSED_RGBA] = 4,
---[[
-		[gl.GL_COMPRESSED_RGB_S3TC_DXT1] = 4,
-		[gl.GL_COMPRESSED_RGBA_S3TC_DXT1] = 4,
-		[gl.GL_COMPRESSED_RGBA_S3TC_DXT5] = 4,
-		[gl.GL_COMPRESSED_RGBA_S3TC_DXT3] = 4,
---]]
-	})[int[0]]
-	glreport('here')
-	if not components then
-		error("couldn't deduce number of components from internal format 0x"..('%x'):format(int[0]))
-	end
-
-	local buffersize = width * height * components
-	local buffer = ffi.new('unsigned char[?]', buffersize)
-	gl.glGetTexImage(gl.GL_TEXTURE_2D, 0, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, buffer)
-
-	gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+-- looks for font image in self.image
+-- image is optional and is stored in self.image
+function Font:calcWidths()
+	local image = assert(self.image)
+	local width = image.width
+	local height = image.height
+	local channels = image.channels
+	local buffer = ffi.cast(image.format..'*', image.buffer)
 
 	local letterWidth = width / 16
 	local letterHeight = height / 16
@@ -82,7 +45,7 @@ function Font:calcWidths(tex)
 				local ch = index + 32
 				for y=0,letterHeight-1 do
 					for x=0,letterWidth-1 do
-						local pixel = buffer[(components-1) + components*((i * letterWidth + x) + width * (j * letterHeight + y))]
+						local pixel = buffer[(channels-1) + channels*((i * letterWidth + x) + width * (j * letterHeight + y))]
 						if pixel ~= 0 then
 							if x < firstx then firstx = x end
 							if x > lastx then lastx = x end

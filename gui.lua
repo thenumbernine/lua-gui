@@ -5,6 +5,7 @@ local table = require 'ext.table'
 local class = require 'ext.class'
 local vec2 = require 'vec.vec2'
 local box2 = require 'vec.box2'
+local Image = require 'image'
 local Mouse = require 'glapp.mouse'
 local Font = require 'gui.font'
 local Widget = require 'gui.widget'
@@ -388,8 +389,9 @@ function GUI:init(args)
 
 	local fontfilename = 'font.png'
 	if args and args.font then fontfilename = args.font end
+	self.font.image = Image(fontfilename)
 	self.font.tex = Tex2D{
-		filename = fontfilename,
+		image = self.font.image,
 		minFilter = gl.GL_NEAREST,
 		magFilter = gl.GL_LINEAR,
 	}
