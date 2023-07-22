@@ -103,7 +103,7 @@ function GUI:getInput(menu, event, eventPos)
 	end
 end
 
-local double4 = ffi.new('GLdouble[4]')
+local double4 = ffi.new('double[4]')
 
 local function loadDouble4(x,y,z,w)
 	double4[0] = x
