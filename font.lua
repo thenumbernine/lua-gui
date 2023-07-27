@@ -107,36 +107,80 @@ function Font:draw(args)
 	return self:drawUnpacked(unpack(packed, 1, 13))
 end
 
-function Font:drawUnpacked(
-	posX, posY,
-	fontSizeX, fontSizeY,
-	text,
-	sizeX, sizeY,
-	colorR, colorG, colorB, colorA,
-	dontRender,
-	singleLine,
-	beginCall,
-	quadCall,
-	endCall
-)
+function Font:drawBegin(...)
+	local
+		posX, posY,
+		fontSizeX, fontSizeY,
+		text,
+		sizeX, sizeY,
+		colorR, colorG, colorB, colorA,
+		dontRender,
+		singleLine
+		= ...
+
+	if colorR then
+		if colorA == 0 then return 0,0 end
+		gl.glColor4f(colorR, colorG, colorB, colorA)
+	else
+		gl.glColor3f(1,1,1)
+	end
+	gl.glEnable(gl.GL_TEXTURE_2D)
+	gl.glBindTexture(gl.GL_TEXTURE_2D, self.tex.id)
+	gl.glBegin(gl.GL_QUADS)
+end
+
+function Font:drawQuad(drawX, drawY, tx, ty, startWidth, finishWidth)
+	for i=0,3 do
+		local vtxX, vtxY
+		if bit.band(i, 2) == 0 then
+			vtxX = startWidth
+		else
+			vtxX = finishWidth
+		end
+		if bit.band(i, 1) == bit.rshift(bit.band(i,2),1) then
+			vtxY = 0
+		else
+			vtxY = 1
+		end
+		gl.glTexCoord2f((tx + vtxX) / 16, (ty + vtxY) / 16)
+		gl.glVertex2f(
+			(vtxX - startWidth) * fontSizeX + drawX,
+			vtxY * fontSizeY + drawY)
+	end
+end
+
+function Font:drawEnd(...)
+	local
+		posX, posY,
+		fontSizeX, fontSizeY,
+		text,
+		sizeX, sizeY,
+		colorR, colorG, colorB, colorA,
+		dontRender,
+		singleLine
+		= ...
+
+	gl.glEnd()
+	gl.glDisable(gl.GL_TEXTURE_2D)
+end
+
+function Font:drawUnpacked(...)
+	local
+		posX, posY,
+		fontSizeX, fontSizeY,
+		text,
+		sizeX, sizeY,
+		colorR, colorG, colorB, colorA,
+		dontRender,
+		singleLine
+		= ...
+
 	assert(self.tex)
 
 	--local text = text:gsub('\r\n', '\n'):gsub('\r', '\n')
 
 	if not dontRender then
-		if beginCall then
-			beginCall()
-		else
-			if colorR then
-				if colorA == 0 then return 0,0 end
-				gl.glColor4f(colorR, colorG, colorB, colorA)
-			else
-				gl.glColor3f(1,1,1)
-			end
-			gl.glEnable(gl.GL_TEXTURE_2D)
-			gl.glBindTexture(gl.GL_TEXTURE_2D, self.tex.id)
-			gl.glBegin(gl.GL_QUADS)
-		end
+		self:drawBegin(...)
 	end
 
 	local cursorX, cursorY = 0, 0
@@ -199,27 +243,7 @@ function Font:drawUnpacked(
 			if not dontRender then
 				local tx = bit.band(charIndex, 15)
 				local ty = bit.rshift(charIndex, 4) - 2
-				if quadCall then
-					quadCall(cursorX+posX,cursorY+posY,tx,ty,startWidth,finishWidth)
-				else
-					for i=1,4 do
-						local vtxX, vtxY
-						if bit.band(i-1, 2) == 0 then
-							vtxX = startWidth
-						else
-							vtxX = finishWidth
-						end
-						if bit.band(i-1, 1) == bit.rshift(bit.band(i-1,2),1) then
-							vtxY = 0
-						else
-							vtxY = 1
-						end
-						gl.glTexCoord2f((tx + vtxX) / 16, (ty + vtxY) / 16)
-						gl.glVertex2f(
-							(vtxX - startWidth) * fontSizeX + cursorX + posX,
-							vtxY * fontSizeY + cursorY + posY)
-					end
-				end
+				self:drawQuad(cursorX + posX, cursorY + posY, tx, ty, startWidth, finishWidth)
 			end
 			cursorX = cursorX + width * fontSizeX
 		end
@@ -228,12 +252,7 @@ function Font:drawUnpacked(
 	end
 
 	if not dontRender then
-		if endCall then
-			endCall()
-		else
-			gl.glEnd()
-			gl.glDisable(gl.GL_TEXTURE_2D)
-		end
+		self:drawEnd()
 	end
 
 	return maxx, cursorY + fontSizeY
