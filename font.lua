@@ -107,63 +107,6 @@ function Font:draw(args)
 	return self:drawUnpacked(unpack(packed, 1, 13))
 end
 
-function Font:drawBegin(...)
-	local
-		posX, posY,
-		fontSizeX, fontSizeY,
-		text,
-		sizeX, sizeY,
-		colorR, colorG, colorB, colorA,
-		dontRender,
-		singleLine
-		= ...
-
-	if colorR then
-		if colorA == 0 then return 0,0 end
-		gl.glColor4f(colorR, colorG, colorB, colorA)
-	else
-		gl.glColor3f(1,1,1)
-	end
-	gl.glEnable(gl.GL_TEXTURE_2D)
-	gl.glBindTexture(gl.GL_TEXTURE_2D, self.tex.id)
-	gl.glBegin(gl.GL_QUADS)
-end
-
-function Font:drawQuad(drawX, drawY, tx, ty, startWidth, finishWidth)
-	for i=0,3 do
-		local vtxX, vtxY
-		if bit.band(i, 2) == 0 then
-			vtxX = startWidth
-		else
-			vtxX = finishWidth
-		end
-		if bit.band(i, 1) == bit.rshift(bit.band(i,2),1) then
-			vtxY = 0
-		else
-			vtxY = 1
-		end
-		gl.glTexCoord2f((tx + vtxX) / 16, (ty + vtxY) / 16)
-		gl.glVertex2f(
-			(vtxX - startWidth) * fontSizeX + drawX,
-			vtxY * fontSizeY + drawY)
-	end
-end
-
-function Font:drawEnd(...)
-	local
-		posX, posY,
-		fontSizeX, fontSizeY,
-		text,
-		sizeX, sizeY,
-		colorR, colorG, colorB, colorA,
-		dontRender,
-		singleLine
-		= ...
-
-	gl.glEnd()
-	gl.glDisable(gl.GL_TEXTURE_2D)
-end
-
 function Font:drawUnpacked(...)
 	local
 		posX, posY,
@@ -256,6 +199,63 @@ function Font:drawUnpacked(...)
 	end
 
 	return maxx, cursorY + fontSizeY
+end
+
+function Font:drawBegin(...)
+	local
+		posX, posY,
+		fontSizeX, fontSizeY,
+		text,
+		sizeX, sizeY,
+		colorR, colorG, colorB, colorA,
+		dontRender,
+		singleLine
+		= ...
+
+	if colorR then
+		if colorA == 0 then return 0,0 end
+		gl.glColor4f(colorR, colorG, colorB, colorA)
+	else
+		gl.glColor3f(1,1,1)
+	end
+	gl.glEnable(gl.GL_TEXTURE_2D)
+	gl.glBindTexture(gl.GL_TEXTURE_2D, self.tex.id)
+	gl.glBegin(gl.GL_QUADS)
+end
+
+function Font:drawQuad(drawX, drawY, tx, ty, startWidth, finishWidth)
+	for i=0,3 do
+		local vtxX, vtxY
+		if bit.band(i, 2) == 0 then
+			vtxX = startWidth
+		else
+			vtxX = finishWidth
+		end
+		if bit.band(i, 1) == bit.rshift(bit.band(i,2),1) then
+			vtxY = 0
+		else
+			vtxY = 1
+		end
+		gl.glTexCoord2f((tx + vtxX) / 16, (ty + vtxY) / 16)
+		gl.glVertex2f(
+			(vtxX - startWidth) * fontSizeX + drawX,
+			vtxY * fontSizeY + drawY)
+	end
+end
+
+function Font:drawEnd(...)
+	local
+		posX, posY,
+		fontSizeX, fontSizeY,
+		text,
+		sizeX, sizeY,
+		colorR, colorG, colorB, colorA,
+		dontRender,
+		singleLine
+		= ...
+
+	gl.glEnd()
+	gl.glDisable(gl.GL_TEXTURE_2D)
 end
 
 
