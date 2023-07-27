@@ -10,11 +10,13 @@ function Font:init(args)
 	self.widths = {}
 	self:resetWidths()
 
-	if args and args.image then
-		self.image = args.image
-		self:calcWidths(args.image)
+	if args then
+		if args.image then
+			self.image = args.image
+			self:calcWidths(args.image)
+		end
+		self.tex = args.tex
 	end
-	self.tex = args.tex
 end
 
 function Font:resetWidths()
@@ -186,7 +188,7 @@ function Font:drawUnpacked(...)
 			if not dontRender then
 				local tx = bit.band(charIndex, 15)
 				local ty = bit.rshift(charIndex, 4) - 2
-				self:drawQuad(cursorX + posX, cursorY + posY, tx, ty, startWidth, finishWidth)
+				self:drawQuad(cursorX + posX, cursorY + posY, tx, ty, startWidth, finishWidth, fontSizeX, fontSizeY)
 			end
 			cursorX = cursorX + width * fontSizeX
 		end
@@ -223,7 +225,7 @@ function Font:drawBegin(...)
 	gl.glBegin(gl.GL_QUADS)
 end
 
-function Font:drawQuad(drawX, drawY, tx, ty, startWidth, finishWidth)
+function Font:drawQuad(drawX, drawY, tx, ty, startWidth, finishWidth, fontSizeX, fontSizeY)
 	for i=0,3 do
 		local vtxX, vtxY
 		if bit.band(i, 2) == 0 then
