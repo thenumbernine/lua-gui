@@ -11,8 +11,10 @@ function Font:init(args)
 	self:resetWidths()
 
 	if args and args.image then
+		self.image = args.image
 		self:calcWidths(args.image)
 	end
+	self.tex = args.tex
 end
 
 function Font:resetWidths()
