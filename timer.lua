@@ -2,7 +2,7 @@
 -- maybe openglapp?
 
 local class = require 'ext.class'
-local sdl = require 'ffi.sdl'
+local timer = require 'ext.timer'.getTime
 
 local Timer = class()
 
@@ -14,7 +14,7 @@ end
 
 function Timer:update()
 	self.last = self.time
-	self.time = sdl.SDL_GetTicks() / 1000
+	self.time = timer()
 	if self.timescale then self.time = self.time * self.timescale end
 	self.delta = self.time - self.last
 end
