@@ -2,9 +2,9 @@
 
 [![Donate via Stripe](https://img.shields.io/badge/Donate-Stripe-green.svg)](https://buy.stripe.com/00gbJZ0OdcNs9zi288)<br>
 
-You'd be better off just using imgui or glfw or librocket or something else.
+I wrote this for a pure opengl gui based on an older C++ implementation.   I wrote that when there weren't many options available.
 
-I use cimgui for all my own GUI needs.
+Now I'm using cimgui+luajit, but fun fact, this pure-lua library runs incredibly faster than cimgui+luajit.  So I keep it around.
 
 ### Dependencies:
 
