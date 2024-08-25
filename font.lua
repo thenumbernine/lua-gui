@@ -1,10 +1,18 @@
 local ffi = require 'ffi'
 local bit = require 'bit'
-local gl = require 'gl'
+local assertindex = require 'ext.assert'.index
 local class = require 'ext.class'
+local gl = require 'gl'
+local GLProgram = require 'gl.program'
+local GLGeometry = require 'gl.geometry'
+local GLSceneObject = require 'gl.sceneobject'
 local glreport = require 'gl.report'
 
+
 local Font = class()
+
+-- hack for the time being
+Font.drawImmediateMode = true
 
 function Font:init(args)
 	self.widths = {}
@@ -16,6 +24,17 @@ function Font:init(args)
 			self:calcWidths(args.image)
 		end
 		self.tex = args.tex
+		self.drawImmediateMode = args.drawImmediateMode
+	end
+
+	if self.drawImmediateMode then
+		if not self.drawBegin then self.drawBegin = self.drawBegin_immediate end
+		if not self.drawEnd then self.drawEnd = self.drawEnd_immediate end
+		if not self.drawQuad then self.drawQuad = self.drawQuad_immediate end
+	else
+		if not self.drawBegin then self.drawBegin = self.drawBegin_buffered end
+		if not self.drawEnd then self.drawEnd = self.drawEnd_buffered end
+		if not self.drawQuad then self.drawQuad = self.drawQuad_buffered end
 	end
 end
 
@@ -203,7 +222,9 @@ function Font:drawUnpacked(...)
 	return maxx, cursorY + fontSizeY
 end
 
-function Font:drawBegin(...)
+-- [[ immediate-mode version
+
+function Font:drawBegin_immediate(...)
 	local
 		posX, posY,
 		fontSizeX, fontSizeY,
@@ -225,7 +246,7 @@ function Font:drawBegin(...)
 	gl.glBegin(gl.GL_QUADS)
 end
 
-function Font:drawQuad(drawX, drawY, tx, ty, startWidth, finishWidth, fontSizeX, fontSizeY)
+function Font:drawQuad_immediate(drawX, drawY, tx, ty, startWidth, finishWidth, fontSizeX, fontSizeY)
 	for i=0,3 do
 		local vtxX, vtxY
 		if bit.band(i, 2) == 0 then
@@ -245,7 +266,7 @@ function Font:drawQuad(drawX, drawY, tx, ty, startWidth, finishWidth, fontSizeX,
 	end
 end
 
-function Font:drawEnd(...)
+function Font:drawEnd_immediate(...)
 	local
 		posX, posY,
 		fontSizeX, fontSizeY,
@@ -260,5 +281,148 @@ function Font:drawEnd(...)
 	gl.glDisable(gl.GL_TEXTURE_2D)
 end
 
+--]]
+-- [=[ buffered geometry mode
+-- this runs by issuing lots of draw calls for single-quads, and it runs surprisingly faster than other APIs which jump through hoops to collect buffers and issue single draw calls ...
+-- TODO switch zeta2d to use this instead of its own builtin version of this same thing ...
+
+function Font:drawBegin_buffered(
+	posX, posY,
+	fontSizeX, fontSizeY,
+	text,
+	sizeX, sizeY,
+	colorR, colorG, colorB, colorA
+)
+	if colorR then
+		self.colorR = colorR
+		self.colorG = colorG
+		self.colorB = colorB
+		self.colorA = colorA
+	else
+		self.colorR = 1
+		self.colorG = 1
+		self.colorB = 1
+		self.colorA = 1
+	end
+
+	self.quadSceneObj = self.quadSceneObj or GLSceneObject{
+		program = {
+			version = 'latest',
+			precision = 'best',
+			vertexCode = [[
+layout(location=0) in vec2 vertex;
+out vec2 tc;
+uniform mat4 mvProjMat;
+uniform vec4 rect;
+uniform vec4 tcRect;	//xy = texcoord offset, zw = texcoord size
+uniform vec2 rot;	//xy = cos(angle), sin(angle)
+void main() {
+	tc = tcRect.xy + tcRect.zw * vertex;
+
+	vec2 rxy = vertex * rect.zw;
+	rxy = vec2(
+		rxy.x * rot.x - rxy.y * rot.y,
+		rxy.y * rot.x + rxy.x * rot.y
+	);
+	rxy += rect.xy;
+	gl_Position = mvProjMat * vec4(rxy, 0., 1.);
+}
+]],
+			fragmentCode = [[
+in vec2 tc;
+out vec4 fragColor;
+uniform vec4 color;
+uniform sampler2D tex;
+void main() {
+	fragColor = color * texture(tex, tc);
+}
+]],
+		},
+		geometry = {
+			mode = gl.GL_TRIANGLE_STRIP,
+			vertexes = {
+				data = {
+					0, 0,
+					1, 0,
+					0, 1,
+					1, 1,
+				},
+				dim = 2,
+			},
+		},
+		uniforms = {
+			tex = 0,
+		},
+		texs = {self.tex},
+	}
+
+	self.tex:bind()
+
+	local sceneObj = self.quadSceneObj
+	local shader = sceneObj.program
+	local uniforms = shader.uniforms
+	shader:use()
+	sceneObj:enableAndSetAttrs()
+
+	local view = assertindex(self, 'view')	-- need this for buffered draw
+	gl.glUniformMatrix4fv(uniforms.mvProjMat.loc, 1, gl.GL_FALSE, view.mvProjMat.ptr)
+end
+
+function Font:drawQuad_buffered(drawX, drawY, tx, ty, startWidth, finishWidth, fontSizeX, fontSizeY)
+	self:drawQuadInt_buffered(
+		drawX, drawY,
+		(finishWidth - startWidth) * fontSizeX,
+		fontSizeY,
+		(tx + startWidth) / 16,
+		ty / 16,
+		(finishWidth - startWidth) / 16,
+		1 / 16,
+		0,
+		self.colorR, self.colorG, self.colorB, self.colorA
+	)
+end
+
+function Font:drawQuadInt_buffered(
+	x,y,
+	w,h,
+	tx,ty,
+	tw,th,
+	angle,
+	r,g,b,a
+)
+	local sceneObj = self.quadSceneObj
+	local shader = sceneObj.program
+	local uniforms = shader.uniforms
+
+	local costh, sinth
+	if angle then
+		local radians = math.rad(angle)
+		costh = math.cos(radians)
+		sinth = math.sin(radians)
+	else
+		costh, sinth = 1, 0
+	end
+
+	if r and g and b and a then
+		gl.glUniform4f(uniforms.color.loc, r, g, b, a)
+	else
+		gl.glUniform4f(uniforms.color.loc, 1, 1, 1, 1)
+	end
+
+	gl.glUniform4f(uniforms.rect.loc, x, y, w, h)
+	gl.glUniform4f(uniforms.tcRect.loc, tx, ty, tw, th)
+	gl.glUniform2f(uniforms.rot.loc, costh, sinth)
+
+	sceneObj.geometry:draw()
+end
+
+function Font:drawEnd_buffered()
+	local sceneObj = self.quadSceneObj
+	local shader = sceneObj.program
+	sceneObj:disableAttrs()
+	shader:useNone()
+	self.tex:unbind()
+end
+--]=]
 
 return Font
