@@ -10,8 +10,8 @@ local Mouse = require 'glapp.mouse'
 local Font = require 'gui.font'
 local Widget = require 'gui.widget'
 local Timer = require 'gui.timer'
-local Tex2D = require 'gl.tex2d'
-
+local GLTex2D = require 'gl.tex2d'
+local GLSceneObject = require 'gl.sceneobject'
 
 -- for scope of Widget functions ...
 local GUI = class()
@@ -224,6 +224,10 @@ function GUI:event(event)
 	end
 end
 
+-- hack for the time being
+-- TODO merge with Font
+GUI.drawImmediateMode = true
+
 function GUI:update()
 	local mouse = self.mouse
 
@@ -234,6 +238,68 @@ function GUI:update()
 
 	gl.glGetIntegerv(gl.GL_VIEWPORT, viewportInt)
 	local viewWidth, viewHeight = viewportInt[2], viewportInt[3]
+
+	if not self.drawImmediateMode then
+		self.lineSceneObj = self.lineSceneObj or GLSceneObject{
+			program = {
+				version = 'latest',
+				precision = 'best',
+				vertexCode = [[
+in vec2 vertex;
+uniform mat4 mvProjMat;
+void main() {
+	gl_Position = mvProjMat * vec4(vertex, 0., 1.);
+}
+]],
+				fragmentCode = [[
+out vec4 fragColor;
+void main() {
+	fragColor = vec4(0., 0., 0., 1.);
+}
+]],
+			},
+			geometry = {
+				mode = gl.GL_LINES,
+			},
+			vertexes = {
+				useVec = true,
+				dim = 2,
+			},
+		}
+		local view = assertindex(self, 'view')	-- need this for buffered draw
+		self.lineSceneObj.uniforms.mvProjMat = view.mvProjMat.ptr
+
+		self.quadSceneObj = self.sceneObj or GLSceneObject{
+			program = {
+				version = 'latest',
+				precision = 'best',
+				vertexCode = [[
+in vec4 vertex;	//[x,y,tx,ty]
+out vec2 tcv;
+uniform mat4 mvProjMat;
+void main() {
+	tcv = vertex.zw;
+	gl_Position = mvProjMat * vec4(vertex.xy, 0., 1.);
+}
+]],
+				fragmentCode = [[
+in vec2 tcv;
+out vec4 fragColor;
+uniform sampler2D tex;
+void main() {
+	fragColor = texture(tex, tcv);
+}
+]],
+			},
+			geometry = {
+				mode = gl.GL_TRIANGLES,
+			},
+			vertexes = {
+				useVec = true,
+				dim = 4,
+			},
+		}
+	end
 
 	do
 		if self.root then
@@ -280,7 +346,6 @@ function GUI:update()
 		gl.glPopMatrix()
 		gl.glMatrixMode(gl.GL_MODELVIEW)
 		gl.glPopAttrib()
-
 	end
 
 	self.gotInputFlag = false
@@ -390,7 +455,7 @@ function GUI:init(args)
 	local fontfilename = 'font.png'
 	if args and args.font then fontfilename = args.font end
 	self.font.image = Image(fontfilename)
-	self.font.tex = Tex2D{
+	self.font.tex = GLTex2D{
 		image = self.font.image,
 		minFilter = gl.GL_NEAREST,
 		magFilter = gl.GL_LINEAR,

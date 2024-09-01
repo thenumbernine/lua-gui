@@ -225,12 +225,25 @@ local function drawRect(args)
 	local tcmin = args.tcmin or {0,0}
 	local tcmax = args.tcmax or {1,1}
 
-	gl.glBegin(gl.GL_QUADS)
-	gl.glTexCoord2f(tcmin[1],tcmin[2]) gl.glVertex2f(args.pos[1], args.pos[2])
-	gl.glTexCoord2f(tcmin[1],tcmax[2]) gl.glVertex2f(args.pos[1], args.pos[2] + args.size[2])
-	gl.glTexCoord2f(tcmax[1],tcmax[2]) gl.glVertex2f(args.pos[1] + args.size[1], args.pos[2] + args.size[2])
-	gl.glTexCoord2f(tcmax[1],tcmin[2]) gl.glVertex2f(args.pos[1] + args.size[1], args.pos[2])
-	gl.glEnd()
+	if self.gui.drawImmediateMode then
+		gl.glBegin(gl.GL_QUADS)
+		gl.glTexCoord2f(tcmin[1],tcmin[2]) gl.glVertex2f(args.pos[1], args.pos[2])
+		gl.glTexCoord2f(tcmin[1],tcmax[2]) gl.glVertex2f(args.pos[1], args.pos[2] + args.size[2])
+		gl.glTexCoord2f(tcmax[1],tcmax[2]) gl.glVertex2f(args.pos[1] + args.size[1], args.pos[2] + args.size[2])
+		gl.glTexCoord2f(tcmax[1],tcmin[2]) gl.glVertex2f(args.pos[1] + args.size[1], args.pos[2])
+		gl.glEnd()
+	else
+		local tmpTex = setmetatable({id=textureID}, GLTex2D)
+		self.gui.quadSceneObj.texs[1] = tmpTex
+		tmpTex.__gc = function() end
+		local vertexCPU = self.gui.quadSceneObj.attrs.vertex.buffer.vec
+		self.gui.quadSceneObj:beginUpdate()
+		vertexCPU:emplace_back():set(args.pos[1],					args.pos[2],					tcmin[1], tcmin[2])
+		vertexCPU:emplace_back():set(args.pos[1],					args.pos[2] + args.size[2],		tcmin[1], tcmax[2])
+		vertexCPU:emplace_back():set(args.pos[1] + args.size[1],	args.pos[2] + args.size[2],		tcmax[1], tcmax[2])
+		vertexCPU:emplace_back():set(args.pos[1] + args.size[1],	args.pos[2],					tcmax[1], tcmin[2])
+		self.gui.quadSceneObj:endUpdate()
+	end
 
 	if textureID ~= 0 then
 		gl.glDisable(gl.GL_TEXTURE_2D)

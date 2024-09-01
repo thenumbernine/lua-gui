@@ -64,13 +64,20 @@ function TextFieldWidget:displayText(ofs)	-- just like Widget except pos is offs
 			multiLine = self.multiLine,
 		}
 
-		gl.glColor3f(0,0,0)
-		gl.glBegin(gl.GL_LINES)
-		gl.glVertex2f(cursorPosX + self.textPadding, cursorPosY)
-		gl.glVertex2f(cursorPosX + self.textPadding, cursorPosY - self.fontSizeValue[2])
-		gl.glEnd()
+		if self.gui.drawImmediateMode then
+			gl.glColor3f(0,0,0)
+			gl.glBegin(gl.GL_LINES)
+			gl.glVertex2f(cursorPosX + self.textPadding, cursorPosY)
+			gl.glVertex2f(cursorPosX + self.textPadding, cursorPosY - self.fontSizeValue[2])
+			gl.glEnd()
+		else
+			local vertexCPU = self.lineSceneObj.attrs.vertex.buffer.vec
+			self.lineSceneObj:beginUpdate()
+			vertexCPU:emplace_back():set(cursorPosX + self.textPadding, cursorPosY)
+			vertexCPU:emplace_back():set(cursorPosX + self.textPadding, cursorPosY - self.fontSizeValue[2])
+			self.lineSceneObj:endUpdate()
+		end
 	end
-
 end
 
 -- some sdl keys aren't being shift'd
