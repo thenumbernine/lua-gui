@@ -123,56 +123,82 @@ local function display(menu, rect)
 
 	rect:clamp(menubox)
 
-	gl.glPushMatrix()
-	gl.glTranslatef(menu.posValue[1], menu.posValue[2], 0)
+	local pushMvProjMat
+	if not menu.drawImmediateMode then
+		pushMvProjMat = menu.gui.view.mvProjMat:clone()
+		menu.gui.view.mvProjMat
+			:applyTranslate(menu.posValue[1], menu.posValue[2], 0)
+			:applyScale(menu.scaleValue[1], menu.scaleValue[2], 1)
+		menu.gui.quadSceneObj.uniforms.clipBox = {rect.min[1], rect.min[2], rect.max[1], rect.max[2]}
+	else
+		gl.glPushMatrix()
+		gl.glTranslatef(menu.posValue[1], menu.posValue[2], 0)
 
-	gl.glClipPlane(gl.GL_CLIP_PLANE0, loadDouble4(0, 1, 0, -rect.min[2]))
-	gl.glClipPlane(gl.GL_CLIP_PLANE1, loadDouble4(0, -1, 0, rect.max[2]))
-	gl.glClipPlane(gl.GL_CLIP_PLANE2, loadDouble4(1, 0, 0, -rect.min[1]))
-	gl.glClipPlane(gl.GL_CLIP_PLANE3, loadDouble4(-1, 0, 0, rect.max[1]))
-	gl.glEnable(gl.GL_CLIP_PLANE0)
-	gl.glEnable(gl.GL_CLIP_PLANE1)
-	gl.glEnable(gl.GL_CLIP_PLANE2)
-	gl.glEnable(gl.GL_CLIP_PLANE3)
+		gl.glClipPlane(gl.GL_CLIP_PLANE0, loadDouble4(0, 1, 0, -rect.min[2]))
+		gl.glClipPlane(gl.GL_CLIP_PLANE1, loadDouble4(0, -1, 0, rect.max[2]))
+		gl.glClipPlane(gl.GL_CLIP_PLANE2, loadDouble4(1, 0, 0, -rect.min[1]))
+		gl.glClipPlane(gl.GL_CLIP_PLANE3, loadDouble4(-1, 0, 0, rect.max[1]))
+		gl.glEnable(gl.GL_CLIP_PLANE0)
+		gl.glEnable(gl.GL_CLIP_PLANE1)
+		gl.glEnable(gl.GL_CLIP_PLANE2)
+		gl.glEnable(gl.GL_CLIP_PLANE3)
 
-	gl.glScalef(menu.scaleValue[1], menu.scaleValue[2], 1)
+		gl.glScalef(menu.scaleValue[1], menu.scaleValue[2], 1)
+	end
 
 	local drawChildren = menu:display()
 
-	gl.glDisable(gl.GL_CLIP_PLANE0)
-	gl.glDisable(gl.GL_CLIP_PLANE1)
-	gl.glDisable(gl.GL_CLIP_PLANE2)
-	gl.glDisable(gl.GL_CLIP_PLANE3)
+	if menu.drawImmediateMode then
+		gl.glDisable(gl.GL_CLIP_PLANE0)
+		gl.glDisable(gl.GL_CLIP_PLANE1)
+		gl.glDisable(gl.GL_CLIP_PLANE2)
+		gl.glDisable(gl.GL_CLIP_PLANE3)
+	end
 
 	if drawChildren then
-		gl.glTranslatef(-menu.childOfsValue[1], -menu.childOfsValue[2], 0)
+		if menu.gui.drawImmediateMode then
+			gl.glTranslatef(-menu.childOfsValue[1], -menu.childOfsValue[2], 0)
+		else
+			-- TODO disable clip plane?
+			menu.gui.view.mvProjMat:applyTranslate(-menu.childOfsValue[1], -menu.childOfsValue[2], 0)
+		end
 		local childRect = rect + menu.childOfsValue
 		for _,child in ipairs(menu.children) do
 			display(child, childRect)
 		end
-		gl.glTranslatef(menu.childOfsValue[1], menu.childOfsValue[2], 0)
+		if menu.gui.drawImmediateMode then
+			gl.glTranslatef(menu.childOfsValue[1], menu.childOfsValue[2], 0)
+		else
+			menu.gui.view.mvProjMat:applyTranslate(-menu.childOfsValue[1], -menu.childOfsValue[2], 0)
+		end
 	end
 
-	gl.glClipPlane(gl.GL_CLIP_PLANE0, loadDouble4(0, 1, 0, -rect.min[2]))
-	gl.glClipPlane(gl.GL_CLIP_PLANE1, loadDouble4(0, -1, 0, rect.max[2]))
-	gl.glClipPlane(gl.GL_CLIP_PLANE2, loadDouble4(1, 0, 0, -rect.min[1]))
-	gl.glClipPlane(gl.GL_CLIP_PLANE3, loadDouble4(-1, 0, 0, rect.max[1]))
-	gl.glEnable(gl.GL_CLIP_PLANE0)
-	gl.glEnable(gl.GL_CLIP_PLANE1)
-	gl.glEnable(gl.GL_CLIP_PLANE2)
-	gl.glEnable(gl.GL_CLIP_PLANE3)
+	if menu.drawImmediateMode then
+		gl.glClipPlane(gl.GL_CLIP_PLANE0, loadDouble4(0, 1, 0, -rect.min[2]))
+		gl.glClipPlane(gl.GL_CLIP_PLANE1, loadDouble4(0, -1, 0, rect.max[2]))
+		gl.glClipPlane(gl.GL_CLIP_PLANE2, loadDouble4(1, 0, 0, -rect.min[1]))
+		gl.glClipPlane(gl.GL_CLIP_PLANE3, loadDouble4(-1, 0, 0, rect.max[1]))
+		gl.glEnable(gl.GL_CLIP_PLANE0)
+		gl.glEnable(gl.GL_CLIP_PLANE1)
+		gl.glEnable(gl.GL_CLIP_PLANE2)
+		gl.glEnable(gl.GL_CLIP_PLANE3)
+	end
 
 	if menu.postDisplay then
 		menu:postDisplay()
 		-- border anyone?
 	end
 
-	gl.glDisable(gl.GL_CLIP_PLANE0)
-	gl.glDisable(gl.GL_CLIP_PLANE1)
-	gl.glDisable(gl.GL_CLIP_PLANE2)
-	gl.glDisable(gl.GL_CLIP_PLANE3)
+	if not menu.drawImmediateMode then
+		menu.gui.view.mvProjMat:copy(pushMvProjMat)
+	else
+		gl.glDisable(gl.GL_CLIP_PLANE0)
+		gl.glDisable(gl.GL_CLIP_PLANE1)
+		gl.glDisable(gl.GL_CLIP_PLANE2)
+		gl.glDisable(gl.GL_CLIP_PLANE3)
 
-	gl.glPopMatrix()
+		gl.glPopMatrix()
+	end
 end
 
 function GUI:setFocus(menu)
@@ -224,10 +250,6 @@ function GUI:event(event)
 	end
 end
 
--- hack for the time being
--- TODO merge with Font
-GUI.drawImmediateMode = true
-
 function GUI:update()
 	local mouse = self.mouse
 
@@ -239,7 +261,18 @@ function GUI:update()
 	gl.glGetIntegerv(gl.GL_VIEWPORT, viewportInt)
 	local viewWidth, viewHeight = viewportInt[2], viewportInt[3]
 
+	if self.root then
+		self.root.sizeValue:set(
+			viewWidth / self.root.scaleValue[1],
+			viewHeight / self.root.scaleValue[2]
+		)
+	end
+
 	if not self.drawImmediateMode then
+		self.view.mvMat:setIdent()
+		self.view.projMat:setOrtho(0, viewWidth, viewHeight, 0, -1000, 1000)
+		self.view.mvProjMat:copy(self.view.projMat)
+
 		self.lineSceneObj = self.lineSceneObj or GLSceneObject{
 			program = {
 				version = 'latest',
@@ -265,9 +298,10 @@ void main() {
 				useVec = true,
 				dim = 2,
 			},
+			uniforms = {
+				mvProjMat = self.view.mvProjMat.ptr,
+			},
 		}
-		local view = assertindex(self, 'view')	-- need this for buffered draw
-		self.lineSceneObj.uniforms.mvProjMat = view.mvProjMat.ptr
 
 		self.quadSceneObj = self.sceneObj or GLSceneObject{
 			program = {
@@ -275,18 +309,29 @@ void main() {
 				precision = 'best',
 				vertexCode = [[
 in vec4 vertex;	//[x,y,tx,ty]
+out vec2 vertexv;
 out vec2 tcv;
 uniform mat4 mvProjMat;
 void main() {
+	vertexv = vertex.xy;
 	tcv = vertex.zw;
 	gl_Position = mvProjMat * vec4(vertex.xy, 0., 1.);
 }
 ]],
 				fragmentCode = [[
+in vec2 vertexv;
 in vec2 tcv;
 out vec4 fragColor;
 uniform sampler2D tex;
+uniform vec4 clipBox;	//[x1,y1,x2,y2]
 void main() {
+	if (vertexv.x < clipBox.x ||
+		vertexv.x > clipBox.z ||
+		vertexv.y < clipBox.y ||
+		vertexv.y > clipBox.w
+	) {
+		discard;
+	}
 	fragColor = texture(tex, tcv);
 }
 ]],
@@ -298,17 +343,11 @@ void main() {
 				useVec = true,
 				dim = 4,
 			},
+			uniforms = {
+				mvProjMat = self.view.mvProjMat.ptr,
+			},
 		}
-	end
-
-	do
-		if self.root then
-			self.root.sizeValue:set(
-				viewWidth / self.root.scaleValue[1],
-				viewHeight / self.root.scaleValue[2]
-			)
-		end
-
+	else
 		gl.glPushAttrib(gl.GL_ALL_ATTRIB_BITS)
 
 		gl.glUseProgram(0)
@@ -332,15 +371,17 @@ void main() {
 		gl.glMatrixMode(gl.GL_MODELVIEW)
 		gl.glPushMatrix()
 		gl.glLoadIdentity()
+	end
 
-		if self.root then
-			gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-			gl.glEnable(gl.GL_BLEND)
-			menuCount = 0
-			display(self.root, box2(0, 0, viewWidth, viewHeight))
-			gl.glDisable(gl.GL_BLEND)
-		end
+	if self.root then
+		gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+		gl.glEnable(gl.GL_BLEND)
+		menuCount = 0
+		display(self.root, box2(0, 0, viewWidth, viewHeight))
+		gl.glDisable(gl.GL_BLEND)
+	end
 
+	if self.drawImmediateMode then
 		gl.glPopMatrix()
 		gl.glMatrixMode(gl.GL_PROJECTION)
 		gl.glPopMatrix()
@@ -432,6 +473,11 @@ function GUI:doKeyPress(sdlevent)
 	end
 end
 
+-- Hack for the time being
+-- In theory setting this on vs off should work all the same ...
+-- TODO merge with Font
+GUI.drawImmediateMode = true
+
 --[[
 args:
 	font
@@ -439,6 +485,11 @@ args:
 --]]
 function GUI:init(args)
 	self.font = Font()
+
+	if not self.drawImmediateMode then
+		self.view = require 'glapp.view'()
+		self.view.ortho = true
+	end
 
 	self.mouse = args and args.mouse
 	if not self.mouse then
