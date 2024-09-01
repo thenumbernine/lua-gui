@@ -4,6 +4,7 @@ local vec2 = require 'vec.vec2'
 local vec4 = require 'vec.vec4'
 local class = require 'ext.class'
 local table = require 'ext.table'
+local GLTex2D = require 'gl.tex2d'
 
 --[[
 fields:
@@ -200,6 +201,8 @@ function Widget:delete()
 	end
 end
 
+local GUI
+
 --[[
 args:
 	pos
@@ -210,43 +213,69 @@ args:
 	textureID
 --]]
 local function drawRect(args)
-	local color = args.color
-	local textureID = args.textureID or 0
-	if color then
-		if color[4] == 0 then return end
-		gl.glColor4f(unpack(color))
-	else
-		gl.glColor4f(1,1,1,1)
-	end
-	if textureID ~= 0 then
-		gl.glEnable(gl.GL_TEXTURE_2D)
-		gl.glBindTexture(gl.GL_TEXTURE_2D, textureID)
-	end
 	local tcmin = args.tcmin or {0,0}
 	local tcmax = args.tcmax or {1,1}
 
-	if self.gui.drawImmediateMode then
+	local color = args.color
+	if color and color[4] == 0 then return end
+	local textureID = args.textureID or 0
+
+	GUI = GUI or require 'gui'
+	if GUI.drawImmediateMode then
+		if color then
+			gl.glColor4f(unpack(color))
+		else
+			gl.glColor4f(1,1,1,1)
+		end
+
+		if textureID ~= 0 then
+			gl.glEnable(gl.GL_TEXTURE_2D)
+			gl.glBindTexture(gl.GL_TEXTURE_2D, textureID)
+		end
+
 		gl.glBegin(gl.GL_QUADS)
 		gl.glTexCoord2f(tcmin[1],tcmin[2]) gl.glVertex2f(args.pos[1], args.pos[2])
 		gl.glTexCoord2f(tcmin[1],tcmax[2]) gl.glVertex2f(args.pos[1], args.pos[2] + args.size[2])
 		gl.glTexCoord2f(tcmax[1],tcmax[2]) gl.glVertex2f(args.pos[1] + args.size[1], args.pos[2] + args.size[2])
 		gl.glTexCoord2f(tcmax[1],tcmin[2]) gl.glVertex2f(args.pos[1] + args.size[1], args.pos[2])
 		gl.glEnd()
-	else
-		local tmpTex = setmetatable({id=textureID}, GLTex2D)
-		self.gui.quadSceneObj.texs[1] = tmpTex
-		tmpTex.__gc = function() end
-		local vertexCPU = self.gui.quadSceneObj.attrs.vertex.buffer.vec
-		self.gui.quadSceneObj:beginUpdate()
-		vertexCPU:emplace_back():set(args.pos[1],					args.pos[2],					tcmin[1], tcmin[2])
-		vertexCPU:emplace_back():set(args.pos[1],					args.pos[2] + args.size[2],		tcmin[1], tcmax[2])
-		vertexCPU:emplace_back():set(args.pos[1] + args.size[1],	args.pos[2] + args.size[2],		tcmax[1], tcmax[2])
-		vertexCPU:emplace_back():set(args.pos[1] + args.size[1],	args.pos[2],					tcmax[1], tcmin[2])
-		self.gui.quadSceneObj:endUpdate()
-	end
 
-	if textureID ~= 0 then
-		gl.glDisable(gl.GL_TEXTURE_2D)
+		if textureID ~= 0 then
+			gl.glDisable(gl.GL_TEXTURE_2D)
+		end
+	else
+		local sceneObj = GUI.quadSceneObj
+
+		if textureID == 0 then
+			sceneObj.uniforms.useTex = false
+			sceneObj.texs[1] = nil
+		else
+			sceneObj.uniforms.useTex = true
+			-- make a fake tex obj that doesn't destroy upon dtor ...
+			local tmpTex = setmetatable({id=textureID}, GLTex2D)
+			sceneObj.texs[1] = tmpTex
+			tmpTex.__gc = function() end
+		end
+
+		if color then
+			sceneObj.uniforms.color = {unpack(color)}
+		else
+			sceneObj.uniforms.color = {1,1,1,1}
+		end
+
+		local vertexCPU = sceneObj.attrs.vertex.buffer.vec
+		sceneObj:beginUpdate()
+
+		local x, y = unpack(args.pos)
+		local w, h = unpack(args.size)
+
+		vertexCPU:emplace_back():set(x,		y,		tcmin[1], tcmin[2])
+		vertexCPU:emplace_back():set(x,		y + h,	tcmin[1], tcmax[2])
+		vertexCPU:emplace_back():set(x + w,	y,		tcmax[1], tcmin[2])
+		vertexCPU:emplace_back():set(x + w,	y,		tcmax[1], tcmin[2])
+		vertexCPU:emplace_back():set(x,		y + h,	tcmin[1], tcmax[2])
+		vertexCPU:emplace_back():set(x + w,	y + h,	tcmax[1], tcmax[2])
+		sceneObj:endUpdate()
 	end
 end
 

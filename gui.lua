@@ -124,12 +124,12 @@ local function display(menu, rect)
 	rect:clamp(menubox)
 
 	local pushMvProjMat
-	if not menu.drawImmediateMode then
+	if not GUI.drawImmediateMode then
 		pushMvProjMat = menu.gui.view.mvProjMat:clone()
 		menu.gui.view.mvProjMat
 			:applyTranslate(menu.posValue[1], menu.posValue[2], 0)
 			:applyScale(menu.scaleValue[1], menu.scaleValue[2], 1)
-		menu.gui.quadSceneObj.uniforms.clipBox = {rect.min[1], rect.min[2], rect.max[1], rect.max[2]}
+		GUI.quadSceneObj.uniforms.clipBox = {rect.min[1], rect.min[2], rect.max[1], rect.max[2]}
 	else
 		gl.glPushMatrix()
 		gl.glTranslatef(menu.posValue[1], menu.posValue[2], 0)
@@ -148,7 +148,7 @@ local function display(menu, rect)
 
 	local drawChildren = menu:display()
 
-	if menu.drawImmediateMode then
+	if GUI.drawImmediateMode then
 		gl.glDisable(gl.GL_CLIP_PLANE0)
 		gl.glDisable(gl.GL_CLIP_PLANE1)
 		gl.glDisable(gl.GL_CLIP_PLANE2)
@@ -156,7 +156,7 @@ local function display(menu, rect)
 	end
 
 	if drawChildren then
-		if menu.gui.drawImmediateMode then
+		if GUI.drawImmediateMode then
 			gl.glTranslatef(-menu.childOfsValue[1], -menu.childOfsValue[2], 0)
 		else
 			-- TODO disable clip plane?
@@ -166,14 +166,14 @@ local function display(menu, rect)
 		for _,child in ipairs(menu.children) do
 			display(child, childRect)
 		end
-		if menu.gui.drawImmediateMode then
+		if GUI.drawImmediateMode then
 			gl.glTranslatef(menu.childOfsValue[1], menu.childOfsValue[2], 0)
 		else
 			menu.gui.view.mvProjMat:applyTranslate(-menu.childOfsValue[1], -menu.childOfsValue[2], 0)
 		end
 	end
 
-	if menu.drawImmediateMode then
+	if GUI.drawImmediateMode then
 		gl.glClipPlane(gl.GL_CLIP_PLANE0, loadDouble4(0, 1, 0, -rect.min[2]))
 		gl.glClipPlane(gl.GL_CLIP_PLANE1, loadDouble4(0, -1, 0, rect.max[2]))
 		gl.glClipPlane(gl.GL_CLIP_PLANE2, loadDouble4(1, 0, 0, -rect.min[1]))
@@ -189,7 +189,7 @@ local function display(menu, rect)
 		-- border anyone?
 	end
 
-	if not menu.drawImmediateMode then
+	if not GUI.drawImmediateMode then
 		menu.gui.view.mvProjMat:copy(pushMvProjMat)
 	else
 		gl.glDisable(gl.GL_CLIP_PLANE0)
@@ -268,85 +268,10 @@ function GUI:update()
 		)
 	end
 
-	if not self.drawImmediateMode then
+	if not GUI.drawImmediateMode then
 		self.view.mvMat:setIdent()
 		self.view.projMat:setOrtho(0, viewWidth, viewHeight, 0, -1000, 1000)
 		self.view.mvProjMat:copy(self.view.projMat)
-
-		self.lineSceneObj = self.lineSceneObj or GLSceneObject{
-			program = {
-				version = 'latest',
-				precision = 'best',
-				vertexCode = [[
-in vec2 vertex;
-uniform mat4 mvProjMat;
-void main() {
-	gl_Position = mvProjMat * vec4(vertex, 0., 1.);
-}
-]],
-				fragmentCode = [[
-out vec4 fragColor;
-void main() {
-	fragColor = vec4(0., 0., 0., 1.);
-}
-]],
-			},
-			geometry = {
-				mode = gl.GL_LINES,
-			},
-			vertexes = {
-				useVec = true,
-				dim = 2,
-			},
-			uniforms = {
-				mvProjMat = self.view.mvProjMat.ptr,
-			},
-		}
-
-		self.quadSceneObj = self.sceneObj or GLSceneObject{
-			program = {
-				version = 'latest',
-				precision = 'best',
-				vertexCode = [[
-in vec4 vertex;	//[x,y,tx,ty]
-out vec2 vertexv;
-out vec2 tcv;
-uniform mat4 mvProjMat;
-void main() {
-	vertexv = vertex.xy;
-	tcv = vertex.zw;
-	gl_Position = mvProjMat * vec4(vertex.xy, 0., 1.);
-}
-]],
-				fragmentCode = [[
-in vec2 vertexv;
-in vec2 tcv;
-out vec4 fragColor;
-uniform sampler2D tex;
-uniform vec4 clipBox;	//[x1,y1,x2,y2]
-void main() {
-	if (vertexv.x < clipBox.x ||
-		vertexv.x > clipBox.z ||
-		vertexv.y < clipBox.y ||
-		vertexv.y > clipBox.w
-	) {
-		discard;
-	}
-	fragColor = texture(tex, tcv);
-}
-]],
-			},
-			geometry = {
-				mode = gl.GL_TRIANGLES,
-			},
-			vertexes = {
-				useVec = true,
-				dim = 4,
-			},
-			uniforms = {
-				mvProjMat = self.view.mvProjMat.ptr,
-			},
-		}
 	else
 		gl.glPushAttrib(gl.GL_ALL_ATTRIB_BITS)
 
@@ -381,7 +306,7 @@ void main() {
 		gl.glDisable(gl.GL_BLEND)
 	end
 
-	if self.drawImmediateMode then
+	if GUI.drawImmediateMode then
 		gl.glPopMatrix()
 		gl.glMatrixMode(gl.GL_PROJECTION)
 		gl.glPopMatrix()
@@ -489,6 +414,90 @@ function GUI:init(args)
 	if not self.drawImmediateMode then
 		self.view = require 'glapp.view'()
 		self.view.ortho = true
+
+		self.lineSceneObj = GLSceneObject{
+			program = {
+				version = 'latest',
+				precision = 'best',
+				vertexCode = [[
+in vec2 vertex;
+uniform mat4 mvProjMat;
+void main() {
+	gl_Position = mvProjMat * vec4(vertex, 0., 1.);
+}
+]],
+				fragmentCode = [[
+out vec4 fragColor;
+void main() {
+	fragColor = vec4(0., 0., 0., 1.);
+}
+]],
+			},
+			geometry = {
+				mode = gl.GL_LINES,
+			},
+			vertexes = {
+				useVec = true,
+				dim = 2,
+			},
+			uniforms = {
+				mvProjMat = self.view.mvProjMat.ptr,
+			},
+		}
+
+		-- singleton because I don't have another way to communicate to drawRect in gui/widget.lua but I should fix that ...
+		GUI.quadSceneObj = GLSceneObject{
+			program = {
+				version = 'latest',
+				precision = 'best',
+				vertexCode = [[
+in vec4 vertex;	//[x,y,tx,ty]
+out vec2 vertexv;
+out vec2 tcv;
+uniform mat4 mvProjMat;
+void main() {
+	vertexv = vertex.xy;
+	tcv = vertex.zw;
+	gl_Position = mvProjMat * vec4(vertex.xy, 0., 1.);
+}
+]],
+				fragmentCode = [[
+in vec2 vertexv;
+in vec2 tcv;
+out vec4 fragColor;
+uniform bool useTex;
+uniform vec4 color;
+uniform sampler2D tex;
+uniform vec4 clipBox;	//[x1,y1,x2,y2]
+void main() {
+	if (vertexv.x < clipBox.x ||
+		vertexv.x > clipBox.z ||
+		vertexv.y < clipBox.y ||
+		vertexv.y > clipBox.w
+	) {
+		discard;
+	}
+
+	if (useTex) {
+		fragColor = color * texture(tex, tcv);
+	} else {
+		fragColor = color;
+	}
+}
+]],
+			},
+			geometry = {
+				mode = gl.GL_TRIANGLES,
+			},
+			vertexes = {
+				useVec = true,
+				dim = 4,
+			},
+			uniforms = {
+				mvProjMat = self.view.mvProjMat.ptr,
+			},
+		}
+
 	end
 
 	self.mouse = args and args.mouse
