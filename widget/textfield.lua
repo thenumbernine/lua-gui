@@ -71,11 +71,11 @@ function TextFieldWidget:displayText(ofs)	-- just like Widget except pos is offs
 			gl.glVertex2f(cursorPosX + self.textPadding, cursorPosY - self.fontSizeValue[2])
 			gl.glEnd()
 		else
-			local vertexCPU = self.lineSceneObj.attrs.vertex.buffer.vec
-			self.lineSceneObj:beginUpdate()
+			local vertexCPU = self.gui.lineSceneObj.attrs.vertex.buffer.vec
+			self.gui.lineSceneObj:beginUpdate()
 			vertexCPU:emplace_back():set(cursorPosX + self.textPadding, cursorPosY)
 			vertexCPU:emplace_back():set(cursorPosX + self.textPadding, cursorPosY - self.fontSizeValue[2])
-			self.lineSceneObj:endUpdate()
+			self.gui.lineSceneObj:endUpdate()
 		end
 	end
 end
@@ -107,7 +107,8 @@ local toUpperCase = {
 
 function TextFieldWidget:keyEditString(sdlevent)
 
-	local unicode = sdlevent.key.keysym.unicode
+	--local unicode = sdlevent.key.keysym.unicode	-- deprecated in sdl since idk when, and idk how to get around it
+	local unicode = tonumber(sdlevent.key.keysym.scancode)
 	local sym = sdlevent.key.keysym.sym
 
 	local textBeforeCursor = self.text:sub(1, self.cursorPos-1)
