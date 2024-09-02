@@ -1,3 +1,4 @@
+local asserteq = require 'ext.assert'.eq
 local gl = require 'gl'
 local box2 = require 'vec.box2'
 local vec2 = require 'vec.vec2'
@@ -213,6 +214,8 @@ args:
 	textureID
 --]]
 local function drawRect(args)
+	GUI = GUI or require 'gui' -- TODO not this
+
 	local tcmin = args.tcmin or {0,0}
 	local tcmax = args.tcmax or {1,1}
 
@@ -220,7 +223,6 @@ local function drawRect(args)
 	if color and color[4] == 0 then return end
 	local textureID = args.textureID or 0
 
-	GUI = GUI or require 'gui'
 	if GUI.drawImmediateMode then
 		if color then
 			gl.glColor4f(unpack(color))
@@ -347,6 +349,13 @@ function Widget:display(ofs)
 end
 
 function Widget:displayText(ofs)
+	asserteq(self.gui.drawImmediateMode, self.gui.font.drawImmediateMode)
+--[[
+print()
+print('Widget:displayText', self.text)
+print(debug.traceback())
+print()
+--]]
 	self.gui.font:draw{
 		pos = vec2(self.textPadding,0),
 		size = vec2(self.sizeValue[1] - 2 * self.textPadding, self.sizeValue[2]),

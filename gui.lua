@@ -130,6 +130,7 @@ local function display(menu, rect)
 			:applyTranslate(menu.posValue[1], menu.posValue[2], 0)
 			:applyScale(menu.scaleValue[1], menu.scaleValue[2], 1)
 		GUI.quadSceneObj.uniforms.clipBox = {rect.min[1], rect.min[2], rect.max[1], rect.max[2]}
+		GUI.quadSceneObj.uniforms.useClip = true
 	else
 		gl.glPushMatrix()
 		gl.glTranslatef(menu.posValue[1], menu.posValue[2], 0)
@@ -161,6 +162,7 @@ local function display(menu, rect)
 		else
 			-- TODO disable clip plane?
 			menu.gui.view.mvProjMat:applyTranslate(-menu.childOfsValue[1], -menu.childOfsValue[2], 0)
+			GUI.quadSceneObj.uniforms.useClip = false
 		end
 		local childRect = rect + menu.childOfsValue
 		for _,child in ipairs(menu.children) do
@@ -182,6 +184,8 @@ local function display(menu, rect)
 		gl.glEnable(gl.GL_CLIP_PLANE1)
 		gl.glEnable(gl.GL_CLIP_PLANE2)
 		gl.glEnable(gl.GL_CLIP_PLANE3)
+	else
+		GUI.quadSceneObj.uniforms.useClip = true
 	end
 
 	if menu.postDisplay then
@@ -189,15 +193,16 @@ local function display(menu, rect)
 		-- border anyone?
 	end
 
-	if not GUI.drawImmediateMode then
-		menu.gui.view.mvProjMat:copy(pushMvProjMat)
-	else
+	if GUI.drawImmediateMode then
 		gl.glDisable(gl.GL_CLIP_PLANE0)
 		gl.glDisable(gl.GL_CLIP_PLANE1)
 		gl.glDisable(gl.GL_CLIP_PLANE2)
 		gl.glDisable(gl.GL_CLIP_PLANE3)
 
 		gl.glPopMatrix()
+	else
+		menu.gui.view.mvProjMat:copy(pushMvProjMat)
+		GUI.quadSceneObj.uniforms.useClip = false
 	end
 end
 
@@ -268,10 +273,31 @@ function GUI:update()
 		)
 	end
 
+	local pushMvMat
+	local pushProjMat
+	local pushMvProjMat
 	if not GUI.drawImmediateMode then
+		pushMvMat = self.view.mvMat:clone()
+		pushProjMat = self.view.projMat:clone()
+		pushMvProjMat = self.view.mvProjMat:clone()
+
 		self.view.mvMat:setIdent()
 		self.view.projMat:setOrtho(0, viewWidth, viewHeight, 0, -1000, 1000)
 		self.view.mvProjMat:copy(self.view.projMat)
+
+		-- TODO push and pop
+		gl.glUseProgram(0)
+		gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
+		gl.glDisable(gl.GL_DEPTH_TEST)
+		--gl.glDisable(gl.GL_CULL_FACE)
+		--gl.glDisable(gl.GL_ALPHA_TEST)
+		--gl.glDisable(gl.GL_LIGHTING)
+		for i=7,0,-1 do
+			gl.glActiveTexture(gl.GL_TEXTURE0 + i)
+			gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+			--gl.glDisable(gl.GL_TEXTURE_2D)
+		end
+
 	else
 		gl.glPushAttrib(gl.GL_ALL_ATTRIB_BITS)
 
@@ -312,6 +338,10 @@ function GUI:update()
 		gl.glPopMatrix()
 		gl.glMatrixMode(gl.GL_MODELVIEW)
 		gl.glPopAttrib()
+	else
+		self.view.mvMat:copy(pushMvMat)
+		self.view.projMat:copy(pushProjMat)
+		self.view.mvProjMat:copy(pushMvProjMat)
 	end
 
 	self.gotInputFlag = false
@@ -469,11 +499,15 @@ uniform bool useTex;
 uniform vec4 color;
 uniform sampler2D tex;
 uniform vec4 clipBox;	//[x1,y1,x2,y2]
+uniform bool useClip;
 void main() {
-	if (vertexv.x < clipBox.x ||
-		vertexv.x > clipBox.z ||
-		vertexv.y < clipBox.y ||
-		vertexv.y > clipBox.w
+	if (useClip &&
+		(
+			vertexv.x < clipBox.x ||
+			vertexv.x > clipBox.z ||
+			vertexv.y < clipBox.y ||
+			vertexv.y > clipBox.w
+		)
 	) {
 		discard;
 	}
