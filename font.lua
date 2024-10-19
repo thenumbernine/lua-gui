@@ -1,6 +1,6 @@
 local ffi = require 'ffi'
 local bit = require 'bit'
-local assertindex = require 'ext.assert'.index
+local assert = require 'ext.assert'
 local class = require 'ext.class'
 local gl = require 'gl'
 local GLProgram = require 'gl.program'
@@ -364,7 +364,7 @@ void main() {
 	shader:use()
 	sceneObj:enableAndSetAttrs()
 
-	local view = assertindex(self, 'view')	-- need this for buffered draw
+	local view = assert.index(self, 'view')	-- need this for buffered draw
 	gl.glUniformMatrix4fv(uniforms.mvProjMat.loc, 1, gl.GL_FALSE, view.mvProjMat.ptr)
 end
 

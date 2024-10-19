@@ -1,4 +1,4 @@
-local asserteq = require 'ext.assert'.eq
+local assert = require 'ext.assert'
 local gl = require 'gl'
 local box2 = require 'vec.box2'
 local vec2 = require 'vec.vec2'
@@ -349,7 +349,7 @@ function Widget:display(ofs)
 end
 
 function Widget:displayText(ofs)
-	asserteq(self.gui.drawImmediateMode, self.gui.font.drawImmediateMode)
+	assert.eq(self.gui.drawImmediateMode, self.gui.font.drawImmediateMode)
 --[[
 print()
 print('Widget:displayText', self.text)
