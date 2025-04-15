@@ -1,5 +1,5 @@
 local gl = require 'gl'
-local sdl = require 'ffi.req' 'sdl'
+local sdl = require 'sdl'
 local math = require 'ext.math'
 local class = require 'ext.class'
 local vec2 = require 'vec.vec2'
