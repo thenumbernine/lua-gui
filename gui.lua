@@ -21,7 +21,7 @@ function GUI:gotInput()
 end
 
 function GUI:sysSize()
-	return unpack(self.root.sizeValue)
+	return table.unpack(self.root.sizeValue)
 end
 
 function GUI:widget(args)
@@ -50,7 +50,7 @@ function GUI:getInput(menu, event, eventPos)
 		res = 'stop'
 	else
 		if menu.preMouseEvent then
-			res = menu:preMouseEvent(event, unpack(eventPos)) or 'continue'
+			res = menu:preMouseEvent(event, table.unpack(eventPos)) or 'continue'
 		end
 	end
 
@@ -73,7 +73,7 @@ function GUI:getInput(menu, event, eventPos)
 		local c = menu.children[i]
 		if c then	-- if a widget is removed before being processed then input can be processed twice ...
 			if not (self.ignoreCapture and c == self.captureMenu) then
-				local childPos = vec2(unpack(childSpacePos))
+				local childPos = vec2(table.unpack(childSpacePos))
 				if childPos[1] > c.posValue[1]
 				and childPos[2] > c.posValue[2]
 				and childPos[1] < c.posValue[1] + c.sizeValue[1]
@@ -94,7 +94,7 @@ function GUI:getInput(menu, event, eventPos)
 	end
 
 	if menu.mouseEvent then
-		res = menu:mouseEvent(event, unpack(eventPos)) or 'continue'
+		res = menu:mouseEvent(event, table.unpack(eventPos)) or 'continue'
 		if res ~= 'continue' then
 			self.gotInputFlag = true
 		end
@@ -118,7 +118,7 @@ local menuCount = 0
 local function display(menu, rect)
 	menuCount = menuCount + 1
 	rect = rect - menu.posValue
-	local menubox = box2(0, 0, unpack(menu.sizeValue))
+	local menubox = box2(0, 0, table.unpack(menu.sizeValue))
 	if not rect:touches(menubox) then return end
 
 	rect:clamp(menubox)

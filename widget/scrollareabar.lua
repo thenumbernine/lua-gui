@@ -1,7 +1,5 @@
-local class = require 'ext.class'
 local ScrollbarWidget = require 'gui.widget.scrollbar'
-
-local ScrollAreaBarWidget = class(ScrollbarWidget)
+local ScrollAreaBarWidget = ScrollbarWidget:subclass()
 
 function ScrollAreaBarWidget:setSliderPos(pos, forceReset)
 	ScrollAreaBarWidget.super.setSliderPos(self, pos, forceReset)

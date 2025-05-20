@@ -1,8 +1,5 @@
 local Widget = require 'gui.widget'
-local class = require 'ext.class'
-
-
-local ScrollTabWidget = class(Widget)
+local ScrollTabWidget = Widget:subclass()
 
 function ScrollTabWidget:mouseEvent(event, x, y)
 	local mouse = self.gui.mouse

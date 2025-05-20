@@ -1,7 +1,5 @@
 local Widget = require 'gui.widget'
-local class = require 'ext.class'
-
-local TextWidget = class(Widget)
+local TextWidget = Widget:subclass()
 
 function TextWidget:init(args)
 	TextWidget.super.init(self, args)

@@ -1,10 +1,9 @@
 local math = require 'ext.math'
-local class = require 'ext.class'
 local vec4 = require 'vec.vec4'
 local Widget = require 'gui.widget'
 local ScrollTabWidget = require 'gui.widget.scrolltab'
 
-local ScrollbarWidget = class(Widget)
+local ScrollbarWidget = Widget:subclass()
 
 ScrollbarWidget.backgroundColorValue = vec4(.5, .5, .5, .5)
 

@@ -1,11 +1,11 @@
 local Widget = require 'gui.widget'
-local class = require 'ext.class'
+local table = require 'ext.table'
 local ScrollAreaBarWidget = require 'gui.widget.scrollareabar'
 local ScrollContainerWidget = require 'gui.widget.scrollcontainer'
 local vec2 = require 'vec.vec2'
 
 
-local ScrollAreaWidget = class(Widget)
+local ScrollAreaWidget = Widget:subclass()
 
 function ScrollAreaWidget:init(args)
 	ScrollAreaWidget.super.init(self, args)
@@ -31,11 +31,11 @@ function ScrollAreaWidget:init(args)
 end
 
 function ScrollAreaWidget:size(...)
-	local oldsize = vec2(unpack(self.sizeValue))
+	local oldsize = vec2(table.unpack(self.sizeValue))
 	local ret = {ScrollAreaWidget.super.size(self, ...)}
-	local newsize = vec2(unpack(self.sizeValue))
+	local newsize = vec2(table.unpack(self.sizeValue))
 	if oldsize ~= newsize and self.horz and self.vert then self:updateChildSize() end
-	return unpack(ret)
+	return table.unpack(ret)
 end
 
 function ScrollAreaWidget:updateChildSize()

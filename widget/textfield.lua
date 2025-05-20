@@ -1,7 +1,6 @@
 local gl = require 'gl'
 local sdl = require 'sdl'
 local math = require 'ext.math'
-local class = require 'ext.class'
 local vec2 = require 'vec.vec2'
 local vec4 = require 'vec.vec4'
 local Widget = require 'gui.widget'
@@ -15,7 +14,7 @@ TODO
 - get rid of text-offset and give the child an offset
 - have the text offset follow the cursor
 --]]
-local TextFieldWidget = class(Widget)
+local TextFieldWidget = Widget:subclass()
 
 TextFieldWidget.textHasChanged = false
 TextFieldWidget.allowFocus = true

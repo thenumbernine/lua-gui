@@ -2,6 +2,7 @@ local ffi = require 'ffi'
 local bit = require 'bit'
 local assert = require 'ext.assert'
 local class = require 'ext.class'
+local table = require 'ext.table'
 local gl = require 'gl'
 local GLProgram = require 'gl.program'
 local GLGeometry = require 'gl.geometry'
@@ -125,7 +126,7 @@ function Font:draw(args)
 	end
 	packed[12] = args.dontRender
 	packed[13] = not args.multiLine
-	return self:drawUnpacked(unpack(packed, 1, 13))
+	return self:drawUnpacked(table.unpack(packed, 1, 13))
 end
 
 function Font:drawUnpacked(...)

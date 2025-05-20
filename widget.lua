@@ -69,9 +69,9 @@ function Widget:init(args)
 	self.backgroundScaleValue = vec2(1/4, 1/4)
 	self.backgroundOffsetValue = vec2()
 	self.sizeValue = vec2(1,1)
-	self.colorValue = vec4(unpack(getmetatable(self).colorValue))
+	self.colorValue = vec4(table.unpack(getmetatable(self).colorValue))
 	self.fontColorValue = vec4(1,1,1,1)
-	self.backgroundColorValue = vec4(unpack(getmetatable(self).backgroundColorValue))
+	self.backgroundColorValue = vec4(table.unpack(getmetatable(self).backgroundColorValue))
 	self.fontSizeValue = vec2(1.5, 1.5)
 	self.childOfsValue = vec2(0, 0)	-- not used atm, but used for scroll areas
 
@@ -95,7 +95,7 @@ function Widget:init(args)
 	local function handleargkv(k,v)
 		if self[k] and type(self[k]) == 'function' then
 			if type(args[k]) == 'table' then
-				self[k](self, unpack(args[k]))
+				self[k](self, table.unpack(args[k]))
 			else
 				self[k](self, args[k])
 			end
@@ -133,16 +133,16 @@ local function vectorgetset(basefield)
 	local field = basefield .. 'Value'	-- use *Value as the vector fields associated with * getter/setters
 	return function(self, ...)
 		local newv = {...}
-		local oldv = {unpack(self[field])}
+		local oldv = {table.unpack(self[field])}
 		if #newv > 0 then
 			if type(newv[1]) == 'table' then
-				self[field]:set(unpack(newv[1]))
+				self[field]:set(table.unpack(newv[1]))
 			else
 				assert(#oldv == #newv, "cannot set "..basefield.." to "..#field.." values.  needs 0, a single table, or "..#oldv)
-				self[field]:set(unpack(newv))
+				self[field]:set(table.unpack(newv))
 			end
 		end
-		return unpack(oldv)
+		return table.unpack(oldv)
 	end
 end
 
@@ -225,7 +225,7 @@ local function drawRect(args)
 
 	if GUI.drawImmediateMode then
 		if color then
-			gl.glColor4f(unpack(color))
+			gl.glColor4f(table.unpack(color))
 		else
 			gl.glColor4f(1,1,1,1)
 		end
@@ -260,7 +260,7 @@ local function drawRect(args)
 		end
 
 		if color then
-			sceneObj.uniforms.color = {unpack(color)}
+			sceneObj.uniforms.color = {table.unpack(color)}
 		else
 			sceneObj.uniforms.color = {1,1,1,1}
 		end
@@ -268,8 +268,8 @@ local function drawRect(args)
 		local vertexCPU = sceneObj.attrs.vertex.buffer.vec
 		sceneObj:beginUpdate()
 
-		local x, y = unpack(args.pos)
-		local w, h = unpack(args.size)
+		local x, y = table.unpack(args.pos)
+		local w, h = table.unpack(args.size)
 
 		vertexCPU:emplace_back():set(x,		y,		tcmin[1], tcmin[2])
 		vertexCPU:emplace_back():set(x,		y + h,	tcmin[1], tcmax[2])
