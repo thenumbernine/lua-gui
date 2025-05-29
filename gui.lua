@@ -243,14 +243,14 @@ end
 local viewportInt = ffi.new('GLint[4]')
 
 function GUI:event(event)
-	if event[0].type == sdl.SDL_KEYUP
-	or event[0].type == sdl.SDL_KEYDOWN
+	if event[0].type == sdl.SDL_EVENT_KEY_UP
+	or event[0].type == sdl.SDL_EVENT_KEY_DOWN
 	then
 		if event[0].key.keysym.sym == sdl.SDLK_LGUI
 		or event[0].key.keysym.sym == sdl.SDLK_RGUI
 		then
 			if not self.keyDownMap then self.keyDownMap = table() end
-			self.keyDownMap[event[0].key.keysym.sym] = event[0].type == sdl.SDL_KEYDOWN
+			self.keyDownMap[event[0].key.keysym.sym] = event[0].type == sdl.SDL_EVENT_KEY_DOWN
 		end
 	end
 end
