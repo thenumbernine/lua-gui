@@ -106,9 +106,9 @@ local toUpperCase = {
 
 function TextFieldWidget:keyEditString(sdlevent)
 
-	--local unicode = sdlevent.key.keysym.unicode	-- deprecated in sdl since idk when, and idk how to get around it
-	local unicode = tonumber(sdlevent.key.keysym.scancode)
-	local sym = sdlevent.key.keysym.sym
+	--local unicode = sdlevent.key.unicode	-- deprecated in sdl since idk when, and idk how to get around it
+	local unicode = tonumber(sdlevent.key.scancode)
+	local sym = sdlevent.key.key
 
 	local textBeforeCursor = self.text:sub(1, self.cursorPos-1)
 	local textAfterCursor = self.text:sub(self.cursorPos)
@@ -136,7 +136,7 @@ function TextFieldWidget:keyEditString(sdlevent)
 		--and unicode < 0x80
 		then
 			-- not working in SDL ...
-			if bit.band(sdlevent.key.keysym.mod, sdl.KMOD_SHIFT) ~= 0 then
+			if bit.band(sdlevent.key.mod, sdl.KMOD_SHIFT) ~= 0 then
 				local upperUnicodeChar = toUpperCase[string.char(unicode)]
 				if upperUnicodeChar then
 					unicode = upperUnicodeChar:byte()
