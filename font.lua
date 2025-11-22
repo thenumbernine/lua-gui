@@ -55,7 +55,7 @@ function Font:calcWidths()
 	local width = image.width
 	local height = image.height
 	local channels = image.channels
-	local buffer = ffi.cast(image.format..'*', image.buffer)
+	local buffer = ffi.cast(ffi.typeof('$*', image.format), image.buffer)
 
 	local letterWidth = width / 16
 	local letterHeight = height / 16
