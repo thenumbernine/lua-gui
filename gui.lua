@@ -105,7 +105,6 @@ function GUI:getInput(menu, event, eventPos)
 end
 
 local double4 = ffi.new('double[4]')
-
 local function loadDouble4(x,y,z,w)
 	double4[0] = x
 	double4[1] = y
@@ -129,7 +128,9 @@ local function display(menu, rect)
 		menu.gui.view.mvProjMat
 			:applyTranslate(menu.posValue[1], menu.posValue[2], 0)
 			:applyScale(menu.scaleValue[1], menu.scaleValue[2], 1)
-		GUI.quadSceneObj.uniforms.clipBox = {rect.min[1], rect.min[2], rect.max[1], rect.max[2]}
+		-- TODO ... glClipPlane applies relative to the current modelview matrix ... but this does not ...
+		-- so FIXME do.
+		--GUI.quadSceneObj.uniforms.clipBox = {rect.min[1], rect.min[2], rect.max[1], rect.max[2]}
 		GUI.quadSceneObj.uniforms.useClip = true
 	else
 		gl.glPushMatrix()
@@ -240,7 +241,8 @@ local function updateTopmostPriority(menu)
 	end
 end
 
-local viewportInt = ffi.new('GLint[4]')
+local vec4i = require 'vec-ffi.vec4i'
+local viewportInt = vec4i()
 
 function GUI:event(event)
 	if event[0].type == sdl.SDL_EVENT_KEY_UP
@@ -263,8 +265,8 @@ function GUI:update()
 
 	--local captured = {}	--pointers in scripting languages...
 
-	gl.glGetIntegerv(gl.GL_VIEWPORT, viewportInt)
-	local viewWidth, viewHeight = viewportInt[2], viewportInt[3]
+	gl.glGetIntegerv(gl.GL_VIEWPORT, viewportInt.s)
+	local viewWidth, viewHeight = viewportInt.z, viewportInt.w
 
 	if self.root then
 		self.root.sizeValue:set(
@@ -297,7 +299,6 @@ function GUI:update()
 			gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
 			--gl.glDisable(gl.GL_TEXTURE_2D)
 		end
-
 	else
 		gl.glPushAttrib(gl.GL_ALL_ATTRIB_BITS)
 
@@ -410,7 +411,6 @@ function GUI:update()
 		-- * doKeyPress() used to be here *
 
 		self.captureMenu = self.nextCapture
-
 	end
 end
 
