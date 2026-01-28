@@ -1,18 +1,23 @@
+--------------------------------------------
+-- generated with dist/build-distinfo.rua --
+--------------------------------------------
+
 name = "gui"
 files = {
-	["README.md"] = "gui/README.md",
-	["font.lua"] = "gui/font.lua",
-	["gui-dev-1.rockspec"] = "gui/gui-dev-1.rockspec",
-	["gui.lua"] = "gui/gui.lua",
-	["timer.lua"] = "gui/timer.lua",
-	["widget.lua"] = "gui/widget.lua",
-	["widget/scrollarea.lua"] = "gui/widget/scrollarea.lua",
-	["widget/scrollareabar.lua"] = "gui/widget/scrollareabar.lua",
-	["widget/scrollbar.lua"] = "gui/widget/scrollbar.lua",
-	["widget/scrollcontainer.lua"] = "gui/widget/scrollcontainer.lua",
-	["widget/scrolltab.lua"] = "gui/widget/scrolltab.lua",
-	["widget/text.lua"] = "gui/widget/text.lua",
-	["widget/textfield.lua"] = "gui/widget/textfield.lua",
+	"README.md",
+	"distinfo",
+	"font.lua",
+	"gui-dev-1.rockspec",
+	"gui.lua",
+	"timer.lua",
+	"widget.lua",
+	"widget/scrollarea.lua",
+	"widget/scrollareabar.lua",
+	"widget/scrollbar.lua",
+	"widget/scrollcontainer.lua",
+	"widget/scrolltab.lua",
+	"widget/text.lua",
+	"widget/textfield.lua",
 }
 deps = {
 	"bit",
@@ -22,4 +27,5 @@ deps = {
 	"image",
 	"sdl",
 	"vec",
+	"vec-ffi",
 }
