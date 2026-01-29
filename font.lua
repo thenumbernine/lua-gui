@@ -75,10 +75,26 @@ function Font:init(args)
 	self.view = args.view
 end
 
--- static helper function for loading
--- maybe it should go in its own function?
-function Font:trueTypeToImage(ttfn)
-	ttfn = ttfn or 'arial.ttf'	-- default
+--[[
+static helper function for loading
+maybe it should go in its own function?
+args:
+	file = (optional) font file, nil means use a default, probably arial.ttf
+	size = font size to render, default 16
+-or- string for just args.file
+--]]
+function Font:trueTypeToImage(args)
+	if type(args) == 'nil' then
+		args = {}
+	elseif type(args) == 'string' then
+		args = {file = args}
+	end
+
+	local ttfn = args.file or 'arial.ttf'	-- default
+
+	local charHeight = args.size or 16
+	local charWidth = charHeight
+
 	local io = require 'ext.io'
 	local path = require 'ext.path'
 	local string = require 'ext.string'
@@ -133,8 +149,6 @@ function Font:trueTypeToImage(ttfn)
 	-- TODO magic numbers ... 
 	-- these constants are pretty ubiquotous throughout the gui library, but I don't think they are defined in any one place...
 	local charbounds = {}
-	local charWidth = 16
-	local charHeight = 16
 	local charsWide = 16
 	local charsHigh = 16
 	local width = charWidth * charsWide
