@@ -42,7 +42,9 @@ layout(location=0) out vec4 fragColor;
 uniform sampler2D tex;
 
 void main() {
+	vec2 charuv = mod(texcoord * 16., 1.);
 	fragColor = texture(tex, texcoord);
+	fragColor.xy += charuv;
 }
 ]],
 			uniforms = {
@@ -62,6 +64,7 @@ void main() {
 			self.tex,
 		},
 	}
+	gl.glClearColor(0,0,1,1)
 end
 
 function App:update()

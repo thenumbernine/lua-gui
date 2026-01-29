@@ -27,8 +27,8 @@ args:
 function Font:init(args)
 	args = args or {}
 
-	self.widths = {}
-	self:resetWidths()
+	self.charbounds = {}
+	self:resetCharBounds()
 
 	-- see if we are given only a texture
 	self.tex = args.tex
@@ -40,16 +40,16 @@ function Font:init(args)
 			local fontfilename = args.filename
 			if fontfilename then
 				if fontfilename:match'%.ttf$' then
-					self.image = Font:trueTypeToImage(fontfilename)
+					self.image, self.charbounds = Font:trueTypeToImage(fontfilename)
 				else	-- assume args.filename is an image?
 					self.image = Image(fontfilename)
+					self:calcCharBounds()	-- must be done when font.image changes
 				end		
 			else
 				-- no filename, load the default arial.ttf
-				self.image = Font:trueTypeToImage'arial.ttf'
+				self.image, self.charbounds = Font:trueTypeToImage'arial.ttf'
 			end
 			-- TODO assert something about the image channels / width / height? or meh?
-			self:calcWidths()	-- must be done when font.image changes
 		end
 		-- now load the texture from the image
 
@@ -131,6 +131,7 @@ function Font:trueTypeToImage(ttfn)
 
 	-- TODO magic numbers ... 
 	-- these constants are pretty ubiquotous throughout the gui library, but I don't think they are defined in any one place...
+	local charbounds = {}
 	local charWidth = 16
 	local charHeight = 16
 	local charsWide = 16
@@ -161,13 +162,31 @@ function Font:trueTypeToImage(ttfn)
 			assert.eq(0, ft.FT_Load_Char(face[0], ch, ft.FT_LOAD_RENDER), 'FT_Load_Char')
 
 			local slot = face[0].glyph	-- FT_GlyphSlot
-			local bitmap = slot[0].bitmap	-- FT_Bitmap 
+			local bitmap = slot[0].bitmap	-- FT_Bitmap
+
+			charbounds[i + charsWide * j + 1] = {
+				xmin = 0,
+				xmax = tonumber(bitmap.width) / charWidth,
+				ymin = 0,
+				ymax = tonumber(bitmap.rows) / charHeight,
+				xofs = 0,
+				-- none of these look right...
+				--yofs =  1 - tonumber(bitmap.rows) / charHeight,
+				--yofs =  tonumber(bitmap.rows) / charHeight,
+				yofs = 1 - tonumber(slot.bitmap_top) / charHeight,
+				--yofs = tonumber(slot.bitmap_top) / charHeight,
+				--yofs = 1 - tonumber(bitmap.rows - slot.bitmap_top) / charHeight,
+				--yofs = tonumber(bitmap.rows - slot.bitmap_top) / charHeight,
+				--yofs = 1 - tonumber(slot.bitmap_top - bitmap.rows) / charHeight,
+				--yofs = tonumber(slot.bitmap_top - bitmap.rows) / charHeight,
+			}
 
 			local srcp = bitmap.buffer
 			local dstx = i * charWidth + slot.bitmap_left
 			for y=0,bitmap.rows-1 do
 				local dsty = j * charHeight
-					+ y + (charHeight - slot.bitmap_top)
+					+ y 
+					-- + (charHeight - slot.bitmap_top)	-- how much to offset the char to get to baseline
 				local dstp = image.buffer + image.channels * (dstx + dsty * image.width)
 				for x=0,bitmap.width-1 do
 					dstp[0] = srcp[0] dstp=dstp+1
@@ -183,21 +202,26 @@ function Font:trueTypeToImage(ttfn)
 	ft.FT_Done_Face(face[0])
 	ft.FT_Done_FreeType(library[0])
 
-	return image
+	return image, charbounds
 end
 
-function Font:resetWidths()
+function Font:resetCharBounds()
 	for i=1,256-32 do
-		self.widths[i] =  {
-			start = 0,
-			finish = 1,
+		self.charbounds[i] =  {
+			xmin = 0,
+			xmax = 1,
+			ymin = 0,
+			ymax = 1,
+			xofs = 0,
+			yofs = 0,
 		}
 	end
 end
 
 -- looks for font image in self.image
 -- image is optional and is stored in self.image
-function Font:calcWidths()
+-- TODO dont' use this with freetype, just use its info
+function Font:calcCharBounds()
 	local image = assert(self.image)
 	local width = image.width
 	local height = image.height
@@ -212,7 +236,7 @@ function Font:calcWidths()
 			local firstx = 16
 			local lastx = -1
 			local index = i+j*16;
-			if index < #self.widths-1 then
+			if index < #self.charbounds-1 then
 				local ch = index + 32
 				for y=0,letterHeight-1 do
 					for x=0,letterWidth-1 do
@@ -230,8 +254,14 @@ function Font:calcWidths()
 
 				if lastx < firstx then firstx, lastx = 0, letterWidth/2 end
 
-				self.widths[ch-32+1].start = firstx / letterWidth
-				self.widths[ch-32+1].finish = lastx / letterWidth
+				self.charbounds[ch-32+1] = {
+					xmin = firstx / letterWidth,
+					xmax = lastx / letterWidth,
+					ymin = 0,
+					ymax = 1,
+					xofs = 0,
+					yofs = 0,
+				}
 			end
 		end
 	end
@@ -317,8 +347,9 @@ function Font:drawUnpacked(...)
 				while (text:byte(finish) or 0) > 32 do
 					local widthIndex = (text:byte(finish) or 0) - 32 + 1	-- 1-based at char 32
 					local charWidth
-					if self.widths[widthIndex] then
-						charWidth = self.widths[widthIndex].finish - self.widths[widthIndex].start
+					local charbound = self.charbounds[widthIndex]
+					if charbound then
+						charWidth = charbound.xmax - charbound.xmin
 					else
 						charWidth = 1
 					end
@@ -340,12 +371,16 @@ function Font:drawUnpacked(...)
 			local charIndex = math.max(text:byte(a) or 0, 32)
 			local widthIndex = charIndex - 32 + 1
 			local startWidth, finishWidth
-			if self.widths[widthIndex] then
-				startWidth = self.widths[widthIndex].start
-				finishWidth = self.widths[widthIndex].finish
+			local charbound = self.charbounds[widthIndex]
+			local yofs
+			if charbound then
+				startWidth = charbound.xmin
+				finishWidth = charbound.xmax
+				yofs = charbound.yofs
 			else
 				startWidth = 0
 				finishWidth = 1
+				yofs = 0
 			end
 			local width = finishWidth - startWidth
 
@@ -355,7 +390,13 @@ function Font:drawUnpacked(...)
 			if not dontRender then
 				local tx = bit.band(charIndex, 15)
 				local ty = bit.rshift(charIndex, 4) - 2
-				self:drawQuad(cursorX + posX, cursorY + posY, tx, ty, startWidth, finishWidth, fontSizeX, fontSizeY)
+				self:drawQuad(
+					cursorX + posX,
+					cursorY + posY + yofs,
+					tx, ty,
+					startWidth, finishWidth,
+					fontSizeX, fontSizeY
+				)
 			end
 			cursorX = cursorX + width * fontSizeX
 		end

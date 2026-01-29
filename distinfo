@@ -10,7 +10,7 @@ files = {
 	"font.lua",
 	"gui-dev-1.rockspec",
 	"gui.lua",
-	"tests/freetype-bitmap-font.lua",
+	"tests/test-truetype.lua",
 	"tests/test-gui.lua",
 	"timer.lua",
 	"widget.lua",
