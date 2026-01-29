@@ -14,8 +14,8 @@ function App:initGL()
 		parent = {self.gui.root},	-- why did I require the arg to be wrapped in {} ...
 	}
 
-	self.vx = .01
-	self.vy = .01
+	self.vx = .0001
+	self.vy = .0001
 end
 
 function App:update()

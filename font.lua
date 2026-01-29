@@ -39,6 +39,118 @@ function Font:init(args)
 	end
 end
 
+-- static helper function for loading
+function Font:trueTypeToImage(ttfn)
+	local io = require 'ext.io'
+	local path = require 'ext.path'
+	local string = require 'ext.string'
+	local ft = require 'gui.ffi.freetype'
+	local Image = require 'image'
+
+	local ttpath = path(ttfn)
+	if not ttpath:exists() then
+		if ffi.os == 'Linux' then
+			--[[
+			fontdirs:insert'/usr/share/fonts'
+			local home = os.getenv'HOME'
+			if home then
+				fontdirs:insert(home..'/.fonts')
+				fontdirs:insert(home..'/.local/share/fonts')
+			end
+			--]]
+			-- [[ really you have to search all subdirs ...
+			-- so instead of a dir list per OS
+			-- I should have a search mechnism per OS
+			local fn = string.trim(
+				io.readproc('find /usr/share/fonts -name "'..ttfn..'"')
+			)
+--DEBUG:print('found', ttfn, 'at', fn)
+			ttpath = path(fn)
+			--]]
+		elseif ffi.os == 'OSX' then
+			error'TODO with fc-lsit'
+			-- TODO copy linux dirs as well?
+			-- TOOD parse fc-list?
+			fontdirs:insert'/System/Library/Fonts'
+			fontdirs:insert'/Library/Fonts'
+			local home = os.getenv'HOME'
+			if home then
+				fontdirs:insert(home..'/Library/Fonts')
+			end
+		elseif ffi.os == 'Windows' then
+			error'why are you using Windows?'
+			fontdirs:insert[[C:\Windows\Fonts]]
+			local localappdata = os.getenv'localappdata'
+			if localappdata then
+				fontdirs:insert(localappdata ..[[\Microsoft\Windows\Fonts]])
+			end
+		else
+			-- warning, I think you won't find your font...
+		end
+	end
+
+	if not ttpath:exists() then
+		error("failed to find "..tostring(ttfn))
+	end
+
+	-- TODO magic numbers ... 
+	-- these constants are pretty ubiquotous throughout the gui library, but I don't think they are defined in any one place...
+	local charWidth = 16
+	local charHeight = 16
+	local charsWide = 16
+	local charsHigh = 16
+	local width = charWidth * charsWide
+	local height = charHeight * charsHigh
+	local image = Image(width, height, 4, 'uint8_t')
+
+
+	-- freetype init
+	local library = ffi.new'FT_Library[1]'
+	assert.eq(0, ft.FT_Init_FreeType(library), 'FT_Init_Library')
+			
+	local face = ffi.new'FT_Face[1]'
+	assert.eq(0, ft.FT_New_Face(
+		library[0],
+		ttpath.path,
+		0,				-- FT_Long face_index ... ?
+		face
+	), 'FT_New_Face')
+	assert.eq(0, ft.FT_Set_Pixel_Sizes(face[0], 0, charHeight), 'FT_Set_Pixel_Sizes')
+
+	for j=0,charsHigh-1 do
+		for i=0,charsWide-1 do
+			local ch = bit.band(0xff, i + charsWide * j + 32)
+			local chstr = string.char(ch)
+
+			-- ex: render 'X'
+			assert.eq(0, ft.FT_Load_Char(face[0], ch, ft.FT_LOAD_RENDER), 'FT_Load_Char')
+
+			local slot = face[0].glyph	-- FT_GlyphSlot
+			local bitmap = slot[0].bitmap	-- FT_Bitmap 
+
+			local srcp = bitmap.buffer
+			local srcw = bitmap.width
+			local srch = bitmap.rows
+
+			for y=0,srch-1 do
+				local dstp = image.buffer + image.channels * (i * charWidth + (y + charHeight - srch + j * charHeight) * image.width)
+				for x=0,srcw-1 do
+					dstp[0] = srcp[0] dstp=dstp+1
+					dstp[0] = srcp[0] dstp=dstp+1
+					dstp[0] = srcp[0] dstp=dstp+1
+					dstp[0] = srcp[0] dstp=dstp+1
+					srcp=srcp+1
+				end
+			end
+		end
+	end
+
+	ft.FT_Done_Face(face[0])
+	ft.FT_Done_FreeType(library[0])
+
+	return image
+end
+
 function Font:resetWidths()
 	for i=1,256-32 do
 		self.widths[i] =  {

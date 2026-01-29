@@ -439,8 +439,6 @@ args:
 	mouse - (optional) - if mouse isn't provided then one will be created, and it'll be updated during GUI:update
 --]]
 function GUI:init(args)
-	self.font = Font()
-
 	if not self.drawImmediateMode then
 		self.view = require 'glapp.view'()
 		self.view.ortho = true
@@ -546,15 +544,26 @@ void main() {
 		self.ownTimer = true
 	end
 
-	local fontfilename = 'font.png'
+	-- TODO all this default arial.ttf and GLTex2D all in Font:init
+	local fontfilename = 'arial.ttf'
 	if args and args.font then fontfilename = args.font end
-	self.font.image = Image(fontfilename)
+
+	local fontImage
+	if fontfilename:match'%.ttf$' then
+		fontImage = Font:trueTypeToImage(fontfilename)
+	else	-- assume it's an image?
+		fontImage = Image(fontfilename)
+	end
+	-- TODO assert something about the image channels / width / height? or meh?
+
+	self.font = Font()
+	self.font.image = fontImage
 	self.font.tex = GLTex2D{
 		image = self.font.image,
 		minFilter = gl.GL_NEAREST,
 		magFilter = gl.GL_LINEAR,
 	}
-	self.font:calcWidths()
+	self.font:calcWidths()	-- must be done when font.image changes
 
 	self.root = self:widget{
 		isroot = true,
