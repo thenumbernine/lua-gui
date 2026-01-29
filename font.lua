@@ -3,7 +3,9 @@ local bit = require 'bit'
 local assert = require 'ext.assert'
 local class = require 'ext.class'
 local table = require 'ext.table'
+local Image = require 'image'
 local gl = require 'gl'
+local GLTex2D = require 'gl.tex2d'
 local GLProgram = require 'gl.program'
 local GLGeometry = require 'gl.geometry'
 local GLSceneObject = require 'gl.sceneobject'
@@ -15,19 +17,50 @@ local Font = class()
 -- hack for the time being
 Font.drawImmediateMode = true
 
+--[[
+args:
+	filename = filename to use, either .ttf or some image format
+	image = use rasterized image for font characters.
+	tex = OpenGL texture of rasterized image
+	drawImmediateMode = true to use old GL<3 API
+--]]
 function Font:init(args)
+	args = args or {}
+
 	self.widths = {}
 	self:resetWidths()
 
-	if args then
-		if args.image then
-			self.image = args.image
-			self:calcWidths(args.image)
+	-- see if we are given only a texture
+	self.tex = args.tex
+	if not args.tex then
+		-- if not a texture then see if we are given an image
+		self.image = args.image
+		if not self.image then
+			-- if not an image then how about a filename
+			local fontfilename = args.filename
+			if fontfilename then
+				if fontfilename:match'%.ttf$' then
+					self.image = Font:trueTypeToImage(fontfilename)
+				else	-- assume args.filename is an image?
+					self.image = Image(fontfilename)
+				end		
+			else
+				-- no filename, load the default arial.ttf
+				self.image = Font:trueTypeToImage'arial.ttf'
+			end
+			-- TODO assert something about the image channels / width / height? or meh?
+			self:calcWidths()	-- must be done when font.image changes
 		end
-		self.tex = args.tex
-		self.drawImmediateMode = args.drawImmediateMode
+		-- now load the texture from the image
+
+		self.tex = GLTex2D{
+			image = self.image,
+			minFilter = gl.GL_NEAREST,
+			magFilter = gl.GL_LINEAR,
+		}
 	end
 
+	self.drawImmediateMode = args.drawImmediateMode
 	if self.drawImmediateMode then
 		if not self.drawBegin then self.drawBegin = self.drawBegin_immediate end
 		if not self.drawEnd then self.drawEnd = self.drawEnd_immediate end
@@ -40,12 +73,12 @@ function Font:init(args)
 end
 
 -- static helper function for loading
+-- maybe it should go in its own function?
 function Font:trueTypeToImage(ttfn)
 	local io = require 'ext.io'
 	local path = require 'ext.path'
 	local string = require 'ext.string'
 	local ft = require 'gui.ffi.freetype'
-	local Image = require 'image'
 
 	local ttpath = path(ttfn)
 	if not ttpath:exists() then
@@ -132,8 +165,14 @@ function Font:trueTypeToImage(ttfn)
 			local srcw = bitmap.width
 			local srch = bitmap.rows
 
+assert.le(slot.bitmap_left + bitmap.width, charWidth)
+assert.lt(slot.bitmap_top, charHeight)
+assert.le(bitmap.rows, charHeight)
+			local dstx = i * charWidth + slot.bitmap_left
 			for y=0,srch-1 do
-				local dstp = image.buffer + image.channels * (i * charWidth + (y + charHeight - srch + j * charHeight) * image.width)
+				local dsty = j * charHeight
+					+ y + (charHeight - slot.bitmap_top)
+				local dstp = image.buffer + image.channels * (dstx + dsty * image.width)
 				for x=0,srcw-1 do
 					dstp[0] = srcp[0] dstp=dstp+1
 					dstp[0] = srcp[0] dstp=dstp+1
@@ -181,8 +220,8 @@ function Font:calcWidths()
 				local ch = index + 32
 				for y=0,letterHeight-1 do
 					for x=0,letterWidth-1 do
-						local pixel = buffer[(channels-1) + channels*((i * letterWidth + x) + width * (j * letterHeight + y))]
-						if pixel ~= 0 then
+						local pixel = buffer[0 + channels*((i * letterWidth + x) + width * (j * letterHeight + y))]
+						if pixel > 128 then
 							if x < firstx then firstx = x end
 							if x > lastx then lastx = x end
 						end
