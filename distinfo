@@ -29,3 +29,21 @@ deps = {
 	"vec",
 	"vec-ffi",
 }
+
+generateBindings = function()
+	return {
+		{	-- freetype ... put it here or give it its own library? meh, here for now.
+			inc = '<ft2build.h>',
+			moreincs = {'<freetype/freetype.h>'},
+			out = 'ffi/freetype.lua',
+			pkgconfig = 'freetype2',
+			final = function(code)
+				code = code .. [[
+
+return require 'ffi.load' 'freetype'
+]]
+				return code
+			end,
+		},
+	}
+end
