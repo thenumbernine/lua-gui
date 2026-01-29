@@ -44,7 +44,7 @@ function Font:init(args)
 				else	-- assume args.filename is an image?
 					self.image = Image(fontfilename)
 					self:calcCharBounds()	-- must be done when font.image changes
-				end		
+				end
 			else
 				-- no filename, load the default arial.ttf
 				self.image, self.charbounds = Font:trueTypeToImage()
@@ -80,6 +80,7 @@ static helper function for loading
 maybe it should go in its own function?
 args:
 	file = (optional) font file, nil means use a default, probably arial.ttf
+	font = (optional) TODO 
 	size = font size to render, default 16
 -or- string for just args.file
 --]]
@@ -103,6 +104,7 @@ function Font:trueTypeToImage(args)
 	local ttpath = path(ttfn)
 	if not ttpath:exists() then
 		if ffi.os == 'Linux' then
+			-- TODO use fc-match --format=%{file} "Arial"
 			--[[
 			fontdirs:insert'/usr/share/fonts'
 			local home = os.getenv'HOME'
