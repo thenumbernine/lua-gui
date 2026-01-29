@@ -1,4 +1,5 @@
 #!/usr/bin/env luajit
+local gl = require 'gl'
 local App = require 'glapp':subclass()
 local GUI = require 'gui'
 
@@ -6,19 +7,24 @@ App.viewDist = 2
 function App:initGL()
 	self.gui = GUI{
 		mouse = self.mouse,	-- orbit behavior makes a mouse
+		drawImmediateMode = false,
 	}
 
 	self.text = require 'gui.widget.text'{
 		text = 'testing',
 		gui = self.gui,
 		parent = {self.gui.root},	-- why did I require the arg to be wrapped in {} ...
+		--backgroundColor = {0,0,1,1},	-- TODO
+		--size = {30, 5},	-- size gets resized by .text so...
 	}
+	--self.text:size(30, 5)	-- hmm can't see backgroundColor ...
 
-	self.vx = .0001
-	self.vy = .0001
+	self.vx = .001
+	self.vy = .001
 end
 
 function App:update()
+	gl.glClear(gl.GL_COLOR_BUFFER_BIT)
 	self.gui:update()
 
 	-- why did I wrap function getters like this ...

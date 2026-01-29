@@ -115,6 +115,9 @@ end
 
 local menuCount = 0
 local function display(menu, rect)
+	local gui = menu.gui
+	local view = gui and gui.view
+
 	menuCount = menuCount + 1
 	rect = rect - menu.posValue
 	local menubox = box2(0, 0, table.unpack(menu.sizeValue))
@@ -122,16 +125,17 @@ local function display(menu, rect)
 
 	rect:clamp(menubox)
 
-	local pushMvProjMat
-	if not GUI.drawImmediateMode then
-		pushMvProjMat = menu.gui.view.mvProjMat:clone()
-		menu.gui.view.mvProjMat
+	local pushMvMat
+	if not gui.drawImmediateMode then
+		pushMvMat = view.mvMat:clone()
+		view.mvMat
 			:applyTranslate(menu.posValue[1], menu.posValue[2], 0)
 			:applyScale(menu.scaleValue[1], menu.scaleValue[2], 1)
+		view.mvProjMat:mul4x4(view.projMat, view.mvMat)
 		-- TODO ... glClipPlane applies relative to the current modelview matrix ... but this does not ...
 		-- so FIXME do.
-		--GUI.quadSceneObj.uniforms.clipBox = {rect.min[1], rect.min[2], rect.max[1], rect.max[2]}
-		GUI.quadSceneObj.uniforms.useClip = true
+		--gui.quadSceneObj.uniforms.clipBox = {rect.min[1], rect.min[2], rect.max[1], rect.max[2]}
+		gui.quadSceneObj.uniforms.useClip = true
 	else
 		gl.glPushMatrix()
 		gl.glTranslatef(menu.posValue[1], menu.posValue[2], 0)
@@ -150,7 +154,7 @@ local function display(menu, rect)
 
 	local drawChildren = menu:display()
 
-	if GUI.drawImmediateMode then
+	if gui.drawImmediateMode then
 		gl.glDisable(gl.GL_CLIP_PLANE0)
 		gl.glDisable(gl.GL_CLIP_PLANE1)
 		gl.glDisable(gl.GL_CLIP_PLANE2)
@@ -158,25 +162,27 @@ local function display(menu, rect)
 	end
 
 	if drawChildren then
-		if GUI.drawImmediateMode then
+		if gui.drawImmediateMode then
 			gl.glTranslatef(-menu.childOfsValue[1], -menu.childOfsValue[2], 0)
 		else
 			-- TODO disable clip plane?
-			menu.gui.view.mvProjMat:applyTranslate(-menu.childOfsValue[1], -menu.childOfsValue[2], 0)
+			view.mvMat:applyTranslate(-menu.childOfsValue[1], -menu.childOfsValue[2], 0)
+			view.mvProjMat:mul4x4(view.projMat, view.mvMat)
 			GUI.quadSceneObj.uniforms.useClip = false
 		end
 		local childRect = rect + menu.childOfsValue
 		for _,child in ipairs(menu.children) do
 			display(child, childRect)
 		end
-		if GUI.drawImmediateMode then
+		if gui.drawImmediateMode then
 			gl.glTranslatef(menu.childOfsValue[1], menu.childOfsValue[2], 0)
 		else
-			menu.gui.view.mvProjMat:applyTranslate(-menu.childOfsValue[1], -menu.childOfsValue[2], 0)
+			view.mvMat:applyTranslate(-menu.childOfsValue[1], -menu.childOfsValue[2], 0)
+			view.mvProjMat:mul4x4(view.projMat, view.mvMat)
 		end
 	end
 
-	if GUI.drawImmediateMode then
+	if gui.drawImmediateMode then
 		gl.glClipPlane(gl.GL_CLIP_PLANE0, loadDouble4(0, 1, 0, -rect.min[2]))
 		gl.glClipPlane(gl.GL_CLIP_PLANE1, loadDouble4(0, -1, 0, rect.max[2]))
 		gl.glClipPlane(gl.GL_CLIP_PLANE2, loadDouble4(1, 0, 0, -rect.min[1]))
@@ -194,7 +200,7 @@ local function display(menu, rect)
 		-- border anyone?
 	end
 
-	if GUI.drawImmediateMode then
+	if gui.drawImmediateMode then
 		gl.glDisable(gl.GL_CLIP_PLANE0)
 		gl.glDisable(gl.GL_CLIP_PLANE1)
 		gl.glDisable(gl.GL_CLIP_PLANE2)
@@ -202,7 +208,8 @@ local function display(menu, rect)
 
 		gl.glPopMatrix()
 	else
-		menu.gui.view.mvProjMat:copy(pushMvProjMat)
+		view.mvMat:copy(pushMvMat)
+		view.mvProjMat:mul4x4(view.projMat, view.mvMat)
 		GUI.quadSceneObj.uniforms.useClip = false
 	end
 end
@@ -277,11 +284,9 @@ function GUI:update()
 
 	local pushMvMat
 	local pushProjMat
-	local pushMvProjMat
-	if not GUI.drawImmediateMode then
+	if not self.drawImmediateMode then
 		pushMvMat = self.view.mvMat:clone()
 		pushProjMat = self.view.projMat:clone()
-		pushMvProjMat = self.view.mvProjMat:clone()
 
 		self.view.mvMat:setIdent()
 		self.view.projMat:setOrtho(0, viewWidth, viewHeight, 0, -1000, 1000)
@@ -333,7 +338,7 @@ function GUI:update()
 		gl.glDisable(gl.GL_BLEND)
 	end
 
-	if GUI.drawImmediateMode then
+	if self.drawImmediateMode then
 		gl.glPopMatrix()
 		gl.glMatrixMode(gl.GL_PROJECTION)
 		gl.glPopMatrix()
@@ -342,7 +347,6 @@ function GUI:update()
 	else
 		self.view.mvMat:copy(pushMvMat)
 		self.view.projMat:copy(pushProjMat)
-		self.view.mvProjMat:copy(pushMvProjMat)
 	end
 
 	self.gotInputFlag = false
@@ -431,7 +435,7 @@ end
 -- Hack for the time being
 -- In theory setting this on vs off should work all the same ...
 -- TODO merge with Font
-GUI.drawImmediateMode = true
+GUI.drawImmediateMode = false
 
 --[[
 args:
@@ -439,6 +443,7 @@ args:
 	mouse - (optional) - if mouse isn't provided then one will be created, and it'll be updated during GUI:update
 --]]
 function GUI:init(args)
+	self.drawImmediateMode = args.drawImmediateMode 
 	if not self.drawImmediateMode then
 		self.view = require 'glapp.view'()
 		self.view.ortho = true
@@ -546,6 +551,8 @@ void main() {
 
 	self.font = Font{
 		filename = args.font,
+		drawImmediateMode = self.drawImmediateMode,
+		view = self.view,
 	}
 
 	self.root = self:widget{

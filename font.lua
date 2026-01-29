@@ -15,7 +15,7 @@ local glreport = require 'gl.report'
 local Font = class()
 
 -- hack for the time being
-Font.drawImmediateMode = true
+Font.drawImmediateMode = false
 
 --[[
 args:
@@ -70,6 +70,9 @@ function Font:init(args)
 		if not self.drawEnd then self.drawEnd = self.drawEnd_buffered end
 		if not self.drawQuad then self.drawQuad = self.drawQuad_buffered end
 	end
+
+	-- used for immediate-mode
+	self.view = args.view
 end
 
 -- static helper function for loading
@@ -155,25 +158,18 @@ function Font:trueTypeToImage(ttfn)
 			local ch = bit.band(0xff, i + charsWide * j + 32)
 			local chstr = string.char(ch)
 
-			-- ex: render 'X'
 			assert.eq(0, ft.FT_Load_Char(face[0], ch, ft.FT_LOAD_RENDER), 'FT_Load_Char')
 
 			local slot = face[0].glyph	-- FT_GlyphSlot
 			local bitmap = slot[0].bitmap	-- FT_Bitmap 
 
 			local srcp = bitmap.buffer
-			local srcw = bitmap.width
-			local srch = bitmap.rows
-
-assert.le(slot.bitmap_left + bitmap.width, charWidth)
-assert.lt(slot.bitmap_top, charHeight)
-assert.le(bitmap.rows, charHeight)
 			local dstx = i * charWidth + slot.bitmap_left
-			for y=0,srch-1 do
+			for y=0,bitmap.rows-1 do
 				local dsty = j * charHeight
 					+ y + (charHeight - slot.bitmap_top)
 				local dstp = image.buffer + image.channels * (dstx + dsty * image.width)
-				for x=0,srcw-1 do
+				for x=0,bitmap.width-1 do
 					dstp[0] = srcp[0] dstp=dstp+1
 					dstp[0] = srcp[0] dstp=dstp+1
 					dstp[0] = srcp[0] dstp=dstp+1
@@ -517,6 +513,7 @@ void main() {
 	sceneObj:enableAndSetAttrs()
 
 	local view = assert.index(self, 'view')	-- need this for buffered draw
+	view.mvProjMat:mul4x4(view.projMat, view.mvMat)
 	gl.glUniformMatrix4fv(uniforms.mvProjMat.loc, 1, gl.GL_FALSE, view.mvProjMat.ptr)
 end
 

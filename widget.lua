@@ -202,7 +202,10 @@ function Widget:delete()
 	end
 end
 
-local GUI
+
+-- make a fake tex obj that doesn't destroy upon dtor ...
+local tmpTex = setmetatable({}, GLTex2D)
+tmpTex.__gc = function() end
 
 --[[
 args:
@@ -212,10 +215,10 @@ args:
 	tcmax (optional)
 	color
 	textureID
+	gui
 --]]
 local function drawRect(args)
-	GUI = GUI or require 'gui' -- TODO not this
-
+	local gui = args.gui
 	local tcmin = args.tcmin or {0,0}
 	local tcmax = args.tcmax or {1,1}
 
@@ -223,7 +226,7 @@ local function drawRect(args)
 	if color and color[4] == 0 then return end
 	local textureID = args.textureID or 0
 
-	if GUI.drawImmediateMode then
+	if gui.drawImmediateMode then
 		if color then
 			gl.glColor4f(table.unpack(color))
 		else
@@ -246,17 +249,15 @@ local function drawRect(args)
 			gl.glDisable(gl.GL_TEXTURE_2D)
 		end
 	else
-		local sceneObj = GUI.quadSceneObj
+		local sceneObj = gui.quadSceneObj
 
 		if textureID == 0 then
 			sceneObj.uniforms.useTex = false
 			sceneObj.texs[1] = nil
 		else
 			sceneObj.uniforms.useTex = true
-			-- make a fake tex obj that doesn't destroy upon dtor ...
-			local tmpTex = setmetatable({id=textureID}, GLTex2D)
+			tmpTex.id = textureID
 			sceneObj.texs[1] = tmpTex
-			tmpTex.__gc = function() end
 		end
 
 		if color then
@@ -285,8 +286,9 @@ function Widget:display(ofs)
 	if not self.visible then return false end
 
 	-- I could do this all in one sweep ...
-	if self.backgroundTexture and self.backgroundColorValue[4] > 0 then
+	if self.backgroundColorValue[4] > 0 then
 		drawRect{
+			gui = self.gui,
 			pos = vec2(0,0),
 			size = self.sizeValue,
 			tcmin = self.backgroundOffsetValue,
@@ -299,6 +301,7 @@ function Widget:display(ofs)
 	if self.colorValue[4] > 0 then
 		if not self.useNinePatch then
 			drawRect{
+				gui = self.gui,
 				pos = vec2(0, 0),
 				size = self.sizeValue,
 				color = self.colorValue,
@@ -331,6 +334,7 @@ function Widget:display(ofs)
 						worldBounds.max[k] = worldBounds.max[k] * self.sizeValue[k]
 					end
 					drawRect{
+						gui = self.gui,
 						pos = worldBounds.min,
 						size = worldBounds.max - worldBounds.min,
 						tcmin = tc.min,
