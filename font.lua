@@ -47,7 +47,7 @@ function Font:init(args)
 				end		
 			else
 				-- no filename, load the default arial.ttf
-				self.image, self.charbounds = Font:trueTypeToImage'arial.ttf'
+				self.image, self.charbounds = Font:trueTypeToImage()
 			end
 			-- TODO assert something about the image channels / width / height? or meh?
 		end
@@ -78,6 +78,7 @@ end
 -- static helper function for loading
 -- maybe it should go in its own function?
 function Font:trueTypeToImage(ttfn)
+	ttfn = ttfn or 'arial.ttf'	-- default
 	local io = require 'ext.io'
 	local path = require 'ext.path'
 	local string = require 'ext.string'
