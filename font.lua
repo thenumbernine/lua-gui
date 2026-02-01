@@ -572,7 +572,7 @@ void main() {
 
 	local view = assert.index(self, 'view')	-- need this for buffered draw
 	view.mvProjMat:mul4x4(view.projMat, view.mvMat)
-	gl.glUniformMatrix4fv(uniforms.mvProjMat.loc, 1, gl.GL_FALSE, view.mvProjMat.ptr)
+	gl.glUniformMatrix4fv(uniforms.mvProjMat.loc, 1, gl.GL_TRUE, view.mvProjMat.ptr)
 end
 
 function Font:drawQuad_buffered(drawX, drawY, tx, ty, startWidth, finishWidth, fontSizeX, fontSizeY)
