@@ -443,6 +443,7 @@ args:
 	mouse - (optional) - if mouse isn't provided then one will be created, and it'll be updated during GUI:update
 --]]
 function GUI:init(args)
+	args = args or {}
 	self.drawImmediateMode = args.drawImmediateMode
 	if not self.drawImmediateMode then
 		self.view = require 'glapp.view'()
