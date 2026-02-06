@@ -9,7 +9,6 @@ local GLTex2D = require 'gl.tex2d'
 local GLProgram = require 'gl.program'
 local GLGeometry = require 'gl.geometry'
 local GLSceneObject = require 'gl.sceneobject'
-local glreport = require 'gl.report'
 
 
 local Font = class()
