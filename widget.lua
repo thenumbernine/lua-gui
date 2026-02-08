@@ -286,7 +286,7 @@ function Widget:display(ofs)
 	if not self.visible then return false end
 
 	-- I could do this all in one sweep ...
-	if self.backgroundColorValue[4] > 0 then
+	if self.backgroundTexture and self.backgroundColorValue[4] > 0 then
 		drawRect{
 			gui = self.gui,
 			pos = vec2(0,0),
