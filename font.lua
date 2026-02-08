@@ -256,7 +256,7 @@ function Font:calcCharBounds()
 				local ch = index + 32
 				for y=0,letterHeight-1 do
 					for x=0,letterWidth-1 do
-						local pixel = buffer[0 + channels*((i * letterWidth + x) + width * (j * letterHeight + y))]
+						local pixel = buffer[channels-1 + channels*((i * letterWidth + x) + width * (j * letterHeight + y))]
 						if pixel > 128 then
 							if x < firstx then firstx = x end
 							if x > lastx then lastx = x end
