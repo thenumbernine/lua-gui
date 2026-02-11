@@ -111,25 +111,11 @@ function Font:trueTypeToImage(args)
 	local ttpath = path(ttfn)
 	if not ttpath:exists() then
 		if ffi.os == 'Linux' then
-			-- TODO use fc-match --format=%{file} "Arial"
-			--[[
-			local fontdirs = table()
-			fontdirs:insert'/usr/share/fonts'
-			local home = os.getenv'HOME'
-			if home then
-				fontdirs:insert(home..'/.fonts')
-				fontdirs:insert(home..'/.local/share/fonts')
-			end
-			--]]
-			-- [[ really you have to search all subdirs ...
-			-- so instead of a dir list per OS
-			-- I should have a search mechnism per OS
-			local fn = string.trim(
-				io.readproc('find /usr/share/fonts -name "'..ttfn..'"')
-			)
+			-- welp find /usr/share/fonts isn't working on all ubuntu systems so ....
+			local fn = io.readproc('fc-match --format=%{file} "'..(ttfn:match'^(.*)%.ttf$' or ttfn)..'"')
+			fn = string.trim(fn)
 --DEBUG:print('found', ttfn, 'at', fn)
 			ttpath = path(fn)
-			--]]
 		elseif ffi.os == 'OSX' then
 			error'TODO with fc-lsit'
 			-- TODO copy linux dirs as well?
