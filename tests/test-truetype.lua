@@ -1,9 +1,10 @@
 #!/usr/bin/env luajit
+local cmdline = require 'ext.cmdline'(...)
 local ffi = require 'ffi'
 local assert = require 'ext.assert'
 local path = require 'ext.path'
 local Image = require 'image'
-local gl = require 'gl'
+local gl = require 'gl.setup'(cmdline.gl)
 local GLTex2D = require 'gl.tex2d'
 local GLSceneObject = require 'gl.sceneobject'
 local ft = require 'gui.ffi.freetype'

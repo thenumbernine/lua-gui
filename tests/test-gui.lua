@@ -1,5 +1,6 @@
 #!/usr/bin/env luajit
-local gl = require 'gl'
+local cmdline = require 'ext.cmdline'(...)
+local gl = require 'gl.setup'(cmdline.gl)
 local App = require 'glapp':subclass()
 local GUI = require 'gui'
 
