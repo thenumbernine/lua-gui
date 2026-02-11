@@ -89,7 +89,16 @@ function Font:trueTypeToImage(args)
 		args = {file = args}
 	end
 
-	local ttfn = args.file or 'arial.ttf'	-- default
+	local ttfn = args.file
+
+	-- TODO maybe combine the OS-specific default picker and the OS-specific path search? or nah?
+	if not ttfn then
+		if ffi.os == 'Android' then
+			ttfn = 'Roboto-Regular.ttf'	-- default in android
+		else
+			ttfn = 'arial.ttf'			-- default everywhere else
+		end
+	end
 
 	local charHeight = args.size or 16
 	local charWidth = charHeight
@@ -104,6 +113,7 @@ function Font:trueTypeToImage(args)
 		if ffi.os == 'Linux' then
 			-- TODO use fc-match --format=%{file} "Arial"
 			--[[
+			local fontdirs = table()
 			fontdirs:insert'/usr/share/fonts'
 			local home = os.getenv'HOME'
 			if home then
@@ -124,6 +134,7 @@ function Font:trueTypeToImage(args)
 			error'TODO with fc-lsit'
 			-- TODO copy linux dirs as well?
 			-- TOOD parse fc-list?
+			local fontdirs = table()
 			fontdirs:insert'/System/Library/Fonts'
 			fontdirs:insert'/Library/Fonts'
 			local home = os.getenv'HOME'
@@ -132,11 +143,21 @@ function Font:trueTypeToImage(args)
 			end
 		elseif ffi.os == 'Windows' then
 			error'why are you using Windows?'
+			local fontdirs = table()
 			fontdirs:insert[[C:\Windows\Fonts]]
 			local localappdata = os.getenv'localappdata'
 			if localappdata then
 				fontdirs:insert(localappdata ..[[\Microsoft\Windows\Fonts]])
 			end
+		elseif ffi.os == 'Android' then
+			local fontdirs = table()
+			fontdirs:insert'/system/fonts'
+			-- TODO what env vars can I depend on for finding my way to the app path?
+			-- or nah none? is this a TODO for SDL+LuaJIT binding code?
+			--fontdirs:insert'app/src/main/res/font'
+			--fontdirs:insert'app/src/main/assets'
+			-- welp so long as there's just one folder ...
+			ttpath = path(fontdirs[1])/ttpath
 		else
 			-- warning, I think you won't find your font...
 		end
