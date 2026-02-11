@@ -14,7 +14,7 @@ App.viewDist = 2
 function App:initGL()
 
 	-- now try to use freetype ...
-	local image = require 'gui.font':trueTypeToImage'arial.ttf'
+	local image = require 'gui.font':trueTypeToImage()
 
 	self.tex = GLTex2D{
 		image = image,
