@@ -10,8 +10,8 @@ files = {
 	"font.lua",
 	"gui-dev-1.rockspec",
 	"gui.lua",
-	"tests/test-truetype.lua",
 	"tests/test-gui.lua",
+	"tests/test-truetype.lua",
 	"timer.lua",
 	"widget.lua",
 	"widget/scrollarea.lua",
@@ -22,8 +22,15 @@ files = {
 	"widget/text.lua",
 	"widget/textfield.lua",
 }
+if ffi.os == "Android" and ffi.arch == "arm" then
+	table.append(files, {
+		"bin/Android/arm/libbrotlicommon.so",
+		"bin/Android/arm/libbrotlidec.so",
+		"bin/Android/arm/libbz2.so",
+		"bin/Android/arm/libfreetype.so",
+	})
+end
 deps = {
-	"bit",
 	"ext",
 	"ffi",
 	"gl",
