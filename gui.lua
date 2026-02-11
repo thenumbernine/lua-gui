@@ -294,7 +294,6 @@ function GUI:update()
 
 		-- TODO push and pop
 		gl.glUseProgram(0)
-		gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
 		gl.glDisable(gl.GL_DEPTH_TEST)
 		--gl.glDisable(gl.GL_CULL_FACE)
 		--gl.glDisable(gl.GL_ALPHA_TEST)
@@ -312,7 +311,6 @@ function GUI:update()
 		gl.glDisable(gl.GL_DEPTH_TEST)
 		gl.glDisable(gl.GL_ALPHA_TEST)
 		gl.glDisable(gl.GL_LIGHTING)
-		gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
 
 		for i=7,0,-1 do
 			gl.glActiveTexture(gl.GL_TEXTURE0 + i)
