@@ -31,10 +31,10 @@ if ffi.os == "Android" and ffi.arch == "arm" then
 	})
 end
 deps = {
+	"app3d",
 	"ext",
 	"ffi",
 	"gl",
-	"glapp",
 	"image",
 	"sdl",
 	"vec",
