@@ -439,6 +439,7 @@ GUI.drawImmediateMode = false
 args:
 	font
 	mouse - (optional) - if mouse isn't provided then one will be created, and it'll be updated during GUI:update
+	app - if you dont provide your own mouse then mouse needs app in its ctor for getting width and height
 --]]
 function GUI:init(args)
 	args = args or {}
@@ -538,7 +539,7 @@ void main() {
 
 	self.mouse = args and args.mouse
 	if not self.mouse then
-		self.mouse = Mouse()
+		self.mouse = Mouse{app = args and args.app}
 		self.ownMouse = true
 	end
 
