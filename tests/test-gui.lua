@@ -1,7 +1,7 @@
 #!/usr/bin/env luajit
 local cmdline = require 'ext.cmdline'(...)
 local gl = require 'gl.setup'(cmdline.gl)
-local App = require 'sdl.mouse'.apply(require 'glapp'):subclass()
+local App = require 'sdl.mouse'.apply(require 'gl.app'):subclass()
 local GUI = require 'gui'
 
 App.viewDist = 2

@@ -443,7 +443,7 @@ function GUI:init(args)
 	args = args or {}
 	self.drawImmediateMode = args.drawImmediateMode
 	if not self.drawImmediateMode then
-		self.view = require 'glapp.view'()
+		self.view = require 'app3d.view'()
 		self.view.ortho = true
 
 		self.lineSceneObj = GLSceneObject{

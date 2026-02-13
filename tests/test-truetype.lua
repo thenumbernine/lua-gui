@@ -9,7 +9,7 @@ local GLTex2D = require 'gl.tex2d'
 local GLSceneObject = require 'gl.sceneobject'
 local ft = require 'gui.ffi.freetype'
 
-local App = require 'glapp.orbit'()
+local App = require 'app3d.orbit'()
 App.viewDist = 2
 function App:initGL()
 
