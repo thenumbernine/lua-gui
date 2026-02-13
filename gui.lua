@@ -267,7 +267,6 @@ end
 function GUI:update()
 	local mouse = self.mouse
 
-	if self.ownMouse then mouse:update() end
 	if self.ownTimer then self.timer:update() end
 
 	--local captured = {}	--pointers in scripting languages...
@@ -537,11 +536,7 @@ void main() {
 
 	end
 
-	self.mouse = args and args.mouse
-	if not self.mouse then
-		self.mouse = Mouse{app = args and args.app}
-		self.ownMouse = true
-	end
+	self.mouse = assert(args and args.mouse, "gui needs a mouse")
 
 	self.timer = args and args.timer
 	if not self.timer then
