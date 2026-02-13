@@ -1,7 +1,7 @@
 #!/usr/bin/env luajit
 local cmdline = require 'ext.cmdline'(...)
 local gl = require 'gl.setup'(cmdline.gl)
-local App = require 'glapp':subclass()
+local App = require 'sdl.mouse'.apply(require 'glapp'):subclass()
 local GUI = require 'gui'
 
 App.viewDist = 2
@@ -25,6 +25,7 @@ function App:initGL()
 end
 
 function App:update()
+	App.super.update(self)
 	gl.glClear(gl.GL_COLOR_BUFFER_BIT)
 	self.gui:update()
 
