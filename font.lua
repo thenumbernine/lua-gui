@@ -95,6 +95,8 @@ function Font:trueTypeToImage(args)
 	if not ttfn then
 		if ffi.os == 'Android' then
 			ttfn = 'Roboto-Regular.ttf'	-- default in android
+		elseif ffi.os == 'Browser' then
+			ttfn = '/gui/Roboto-Regular.ttf'
 		else
 			ttfn = 'arial.ttf'			-- default everywhere else
 		end
